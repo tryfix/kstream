@@ -32,4 +32,4 @@ jobs:
         run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
 
       - name: Code Cov
-        run: CODECOV_TOKEN="119bb80b-4e32-4bec-8896-0feb62325438" bash <(curl -s https://codecov.io/bash)
+        run: CODECOV_TOKEN="7749df23-a010-4716-91fb-277130eb51bd" bash <(curl -s https://codecov.io/bash)
