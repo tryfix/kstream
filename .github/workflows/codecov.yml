@@ -1,0 +1,35 @@
+name: coverage
+on:
+  push:
+    branches:
+      - '*'
+    paths-ignore:
+      - '**.md'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+jobs:
+  run:
+    name: Go
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      matrix:
+        go-version: [1.13.x]
+        operating-system: [ubuntu-latest]
+    env:
+      GO111MODULE: on
+    steps:
+
+      - name: Install Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Go Test
+        run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+      - name: Code Cov
+        run: CODECOV_TOKEN="119bb80b-4e32-4bec-8896-0feb62325438" bash <(curl -s https://codecov.io/bash)
