@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tryfix/errors"
 	"github.com/tryfix/kstream/data"
-	"github.com/tryfix/kstream/k-stream/offsets"
+	"github.com/tryfix/kstream/kstream/offsets"
 	"github.com/tryfix/log"
 	"github.com/tryfix/metrics"
 	"time"

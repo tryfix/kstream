@@ -2,8 +2,8 @@ package stream
 
 import (
 	"github.com/tryfix/kstream/examples/example_1/encoders"
-	"github.com/tryfix/kstream/k-stream"
-	"github.com/tryfix/kstream/k-stream/worker_pool"
+	"github.com/tryfix/kstream/kstream"
+	"github.com/tryfix/kstream/kstream/worker_pool"
 	"github.com/tryfix/log"
 	"github.com/tryfix/metrics"
 	"os"

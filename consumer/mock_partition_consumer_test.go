@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/tryfix/kstream/admin"
 	"github.com/tryfix/kstream/data"
-	"github.com/tryfix/kstream/k-stream/offsets"
+	"github.com/tryfix/kstream/kstream/offsets"
 	"testing"
 )
 

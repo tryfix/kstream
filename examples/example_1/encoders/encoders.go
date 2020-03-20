@@ -2,7 +2,7 @@ package encoders
 
 import (
 	"github.com/tryfix/kstream/examples/example_1/events"
-	"github.com/tryfix/kstream/k-stream/encoding"
+	"github.com/tryfix/kstream/kstream/encoding"
 )
 
 var KeyEncoder = func() encoding.Encoder { return Int64Encoder{} }

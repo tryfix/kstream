@@ -5,18 +5,18 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/tryfix/kstream/examples/example_1/events"
-	kstream "github.com/tryfix/kstream/k-stream"
-	"github.com/tryfix/kstream/k-stream/branch"
-	"github.com/tryfix/kstream/k-stream/encoding"
+	kstream "github.com/tryfix/kstream/kstream"
+	"github.com/tryfix/kstream/kstream/branch"
+	"github.com/tryfix/kstream/kstream/encoding"
 	"time"
 )
 
 type AccountDebited struct {
-	Upstream           kstream.Stream
-	AccountDetailTable kstream.GlobalTable
+	Upstream             kstream.Stream
+	AccountDetailTable   kstream.GlobalTable
 	CustomerProfileTable kstream.GlobalTable
 	KeyEncoder           func() encoding.Encoder
-	MessageEncoder    func() encoding.Encoder
+	MessageEncoder       func() encoding.Encoder
 }
 
 func (ad AccountDebited) Init() {
@@ -62,9 +62,9 @@ func (ad AccountDebited) accountDebitedAccountDetailsMapping(left interface{}, r
 	text := fmt.Sprintf(`Your a/c %d is debited with %v USD on %v at %v`, l.Body.AccountNo, l.Body.Amount, dateTime, l.Body.Location)
 
 	message := events.MessageCreated{
-		ID:   uuid.New().String(),
-		Type: "message_created",
-		Timestamp: time.Now().UnixNano()/1e6,
+		ID:        uuid.New().String(),
+		Type:      "message_created",
+		Timestamp: time.Now().UnixNano() / 1e6,
 	}
 
 	message.Body.CustomerID = r.Body.CustomerID
