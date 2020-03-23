@@ -1,9 +1,11 @@
 ## KStream - Kafka Streams for Golang
 
-[![GoDoc](https://godoc.org/github.com/tryfix/k-stream?status.svg)](https://godoc.org/github.com/tryfix/kstream)
+[![Godoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/tryfix/kstream)
 ![build](https://github.com/tryfix/kstream/workflows/build/badge.svg)
 [![Coverage](https://codecov.io/gh/tryfix/kstream/branch/master/graph/badge.svg)](https://codecov.io/gh/tryfix/kstream)
+[![Releases](https://img.shields.io/github/release/tryfix/kstream/all.svg?style=flat-square)](https://github.com/tryfix/kstream/releases)
 [![Go Report Card](https://goreportcard.com/badge/github.com/tryfix/kstream)](https://goreportcard.com/report/github.com/tryfix/kstream)
+[![LICENSE](https://img.shields.io/github/license/tryfix/kstream.svg?style=flat-square)](https://github.com/tryfix/kstream/blob/master/LICENSE)
 
 KStream is a light-weight implementation of [kafka streams](https://kafka.apache.org/documentation/streams/).
 It is heavily inspired by Kafka-Streams(Java) library. KStream
