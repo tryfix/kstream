@@ -83,7 +83,7 @@ func (r *registry) Store(name string) Store {
 
 	store, ok := r.Stores[name]
 	if !ok {
-		r.logger.Fatal(fmt.Sprintf(`unknown store [%s]`, name))
+		r.logger.Error(fmt.Sprintf(`unknown store [%s]`, name))
 	}
 
 	return store
