@@ -1,6 +1,7 @@
 package store
 
 import (
+	"errors"
 	"fmt"
 	"github.com/tryfix/kstream/kstream/encoding"
 	"github.com/tryfix/log"
@@ -11,7 +12,7 @@ import (
 type Registry interface {
 	Register(store Store)
 	New(name string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...Options) Store
-	Store(name string) Store
+	Store(name string) (Store, error)
 	List() []string
 }
 
@@ -77,16 +78,16 @@ func (r *registry) New(name string, keyEncoder encoding.Builder, valEncoder enco
 	return r.Stores[name]
 }
 
-func (r *registry) Store(name string) Store {
+func (r *registry) Store(name string) (Store, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	store, ok := r.Stores[name]
 	if !ok {
-		r.logger.Fatal(fmt.Sprintf(`unknown store [%s]`, name))
+		return nil, errors.New(fmt.Sprintf(`unknown store [%s]`, name))
 	}
 
-	return store
+	return store, nil
 }
 
 func (r *registry) List() []string {

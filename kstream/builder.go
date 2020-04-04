@@ -320,7 +320,11 @@ func (b *StreamBuilder) buildKStream(kStream *kStream) error {
 
 func (b *StreamBuilder) buildGlobalKTable(table *globalKTable) {
 
-	table.store = b.storeRegistry.Store(table.storeName)
+	stor, err := b.storeRegistry.Store(table.storeName)
+	if err != nil {
+		b.logger.Fatal(err)
+	}
+	table.store = stor
 	//tableConfig := new(globalKTable)
 	//tableConfig.table = table
 	/*tableConfig.store.changelog.enabled = table.config.changelog.enabled

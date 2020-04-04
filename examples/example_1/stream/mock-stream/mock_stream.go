@@ -69,6 +69,7 @@ func setupMockBuilders() *kstream.StreamBuilder {
 	config.Host = `localhost:8100`
 	config.AsyncProcessing = true
 	//config.Store.StorageDir = `storage`
+	config.Store.Http.Enabled = true
 	config.Store.Http.Host = `:9002`
 	config.ChangeLog.Enabled = false
 	//config.ChangeLog.Buffer.Enabled = true

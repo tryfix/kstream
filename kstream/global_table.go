@@ -23,7 +23,7 @@ type GlobalTableOffset int64
 const GlobalTableOffsetDefault GlobalTableOffset = 0
 
 // GlobalTableOffsetLatest defines the beginning of the partition.
-// suitable for stream topics since the topic can contains historical data.
+// Suitable for topics with retention policy delete since the topic can contains historical data.
 const GlobalTableOffsetLatest GlobalTableOffset = -1
 
 // globalTableStoreWriter overrides the persistence logic for GlobalTables.
