@@ -201,7 +201,6 @@ func (g *Graph) Branch(parent string, name string, async bool, order int, attrs 
 	attrs[`fillcolor`] = `accent3`
 	attrs[`fontname`] = `Arial`
 	attrs[`fontsize`] = `14`
-	attrs[`shape`] = `rectangle`
 	attrs[`style`] = `"rounded,filled"`
 	if err := g.vizGraph.AddNode(g.parent, name, attrs); err != nil {
 		panic(err)
@@ -312,7 +311,6 @@ func draw(parent string, builders []topology.NodeBuilder, graph *Graph) {
 			if n.Typ == join.LeftJoin {
 				typ = `LEFT`
 			}
-			//println(`xxxxxxxxxxxxxx`)
 			graph.Joiner(parent, nName, n.Store, map[string]string{
 				`label`: fmt.Sprintf(`< <B>%s</B> >`, typ+` JOIN`),
 			}, edgeAttr)
@@ -339,7 +337,7 @@ func draw(parent string, builders []topology.NodeBuilder, graph *Graph) {
 			nodeName = nName
 
 			graph.Branch(parent, nName, false, int(i), map[string]string{
-				`label`: fmt.Sprintf(`"%s"`, n.Type()),
+				`label`: fmt.Sprintf(`"%s"`, "BS"),
 			}, edgeAttr)
 
 		case *processors.KeySelector:

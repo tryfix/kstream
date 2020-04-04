@@ -61,10 +61,11 @@ func (j *GlobalTableJoiner) Type() topology.Type {
 }
 
 func (j *GlobalTableJoiner) Build() (topology.Node, error) { //TODO: write new build
-	j.store = j.Registry.Store(j.Store)
-	if j.store == nil {
+	s, err := j.Registry.Store(j.Store)
+	if err != nil || s == nil {
 		return nil, errors.New(`store [` + j.Store + `] dose not exist`)
 	}
+	j.store = s
 
 	var childs []topology.Node
 	//var childBuilders []node.NodeBuilder

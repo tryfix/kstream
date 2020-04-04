@@ -132,7 +132,17 @@ func MakeEndpoints(host string, registry Registry, logger log.Logger) {
 			}
 		}
 
-		i, err := registry.Store(store).GetAll(context.Background())
+		stor, err := registry.Store(store)
+		if err != nil {
+			res := h.encodeError(err)
+			if _, err := writer.Write(res); err != nil {
+				logger.Error(err)
+				return
+			}
+			return
+		}
+
+		i, err := stor.GetAll(context.Background())
 		if err != nil {
 			res := h.encodeError(err)
 			if _, err := writer.Write(res); err != nil {
@@ -174,14 +184,23 @@ func MakeEndpoints(host string, registry Registry, logger log.Logger) {
 
 		keyByte := []byte(key)
 
-		decodedKey, err := registry.Store(store).KeyEncoder().Decode(keyByte)
+		stor, err := registry.Store(store)
+		if err != nil {
+			res := h.encodeError(err)
+			if _, err := writer.Write(res); err != nil {
+				logger.Error(err)
+				return
+			}
+			return
+		}
+		decodedKey, err := stor.KeyEncoder().Decode(keyByte)
 		//@FIXME
 		//keyInt, err := strconv.Atoi(key)
 		if err != nil {
 			return
 		}
 
-		data, err := registry.Store(store).Get(context.Background(), decodedKey)
+		data, err := stor.Get(context.Background(), decodedKey)
 		if err != nil {
 			res := h.encodeError(err)
 			if _, err := writer.Write(res); err != nil {
