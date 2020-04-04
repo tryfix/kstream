@@ -12,6 +12,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/olekukonko/tablewriter"
+	"sync/atomic"
 
 	"github.com/tryfix/errors"
 	"github.com/tryfix/kstream/backend"
@@ -111,7 +112,7 @@ func (t *tableInstance) Start() error {
 	ticker := time.NewTicker(1 * time.Second)
 	go func(tic *time.Ticker, topic string, partition int32) {
 		for range tic.C {
-			t.logger.Info(fmt.Sprintf(`sync progress - [%d]%% done (%d/%d)`, t.syncedCount*100/t.endOffset, t.syncedCount, t.endOffset))
+			t.logger.Info(fmt.Sprintf(`sync progress - [%d]%% done (%d/%d)`, atomic.LoadInt64(&t.syncedCount)*100/t.endOffset, atomic.LoadInt64(&t.syncedCount), t.endOffset))
 		}
 	}(ticker, t.tp.topic, t.tp.partition)
 
@@ -126,7 +127,7 @@ func (t *tableInstance) Start() error {
 				`partition`: fmt.Sprint(e.Partition),
 			})
 
-			t.syncedCount++
+			atomic.AddInt64(&t.syncedCount, 1)
 
 			if err := t.process(e, t.restartOnFailureCount, nil); err != nil {
 				t.logger.Error(
