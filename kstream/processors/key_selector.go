@@ -64,7 +64,7 @@ func (ks *KeySelector) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOu
 		}
 	}
 
-	return k, vOut, true, err
+	return k, vIn, true, err
 }
 
 func (ks *KeySelector) Type() topology.Type {
