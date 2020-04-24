@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/Shopify/sarama"
-	"github.com/google/uuid"
 	"github.com/tryfix/kstream/data"
 	"github.com/tryfix/log"
 	"github.com/tryfix/metrics"
@@ -18,13 +17,13 @@ type ReBalanceHandler interface {
 }
 
 type groupHandler struct {
-	reBalanceHandler  ReBalanceHandler
-	partitionMap      map[string]*partition
-	partitions        chan Partition
-	logger            log.Logger
-	recodeExtractFunc RecodeExtractFunc
-	mu                *sync.Mutex
-	metrics           struct {
+	reBalanceHandler      ReBalanceHandler
+	partitionMap          map[string]*partition
+	partitions            chan Partition
+	logger                log.Logger
+	recodeUuidExtractFunc RecodeUuidExtractFunc
+	mu                    *sync.Mutex
+	metrics               struct {
 		reporter         metrics.Reporter
 		reBalancing      metrics.Gauge
 		commitLatency    metrics.Observer
@@ -91,18 +90,11 @@ func (h *groupHandler) ConsumeClaim(g sarama.ConsumerGroupSession, c sarama.Cons
 			Topic:     msg.Topic,
 			Partition: msg.Partition,
 			Timestamp: msg.Timestamp,
-			UUID:      uuid.New(),
 			Headers:   data.RecordHeaders(msg.Headers),
 		}
 
-		if h.recodeExtractFunc != nil {
-			rc, err := h.recodeExtractFunc(record)
-			if err != nil {
-				h.logger.Error(fmt.Sprintf(`consumer record extract error due to %s`, err))
-				continue
-			}
-			record = rc
-		}
+		uuid := h.recodeUuidExtractFunc(record)
+		record.UUID = uuid
 
 		h.logger.Trace("record received after " +
 			t.String() +

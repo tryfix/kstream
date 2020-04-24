@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Shopify/sarama"
+	"github.com/google/uuid"
 	"github.com/tryfix/errors"
 	"github.com/tryfix/kstream/data"
 	"github.com/tryfix/log"
@@ -12,13 +13,17 @@ import (
 	"time"
 )
 
-type RecodeExtractFunc func(message *data.Record) (*data.Record, error)
+type RecodeUuidExtractFunc func(message *data.Record) uuid.UUID
 
 type consumerOptions struct {
-	recodeExtractorFunc RecodeExtractFunc
+	recodeUuidExtractorFunc RecodeUuidExtractFunc
 }
 
-func (opts *consumerOptions) applyDefault() {}
+func (opts *consumerOptions) applyDefault() {
+	opts.recodeUuidExtractorFunc = func(message *data.Record) uuid.UUID {
+		return uuid.New()
+	}
+}
 
 func (opts *consumerOptions) apply(options ...Option) {
 	for _, option := range options {
@@ -29,9 +34,9 @@ func (opts *consumerOptions) apply(options ...Option) {
 
 type Option func(*consumerOptions)
 
-func WithRecodeExtractFunc(fn RecodeExtractFunc) Option {
+func WithRecodeExtractFunc(fn RecodeUuidExtractFunc) Option {
 	return func(options *consumerOptions) {
-		options.recodeExtractorFunc = fn
+		options.recodeUuidExtractorFunc = fn
 	}
 }
 
@@ -108,12 +113,12 @@ func NewConsumer(config *Config, options ...Option) (Consumer, error) {
 func (c *consumer) Consume(tps []string, handler ReBalanceHandler) (chan Partition, error) {
 
 	c.saramaGroupHandler = &groupHandler{
-		mu:                new(sync.Mutex),
-		recodeExtractFunc: c.config.options.recodeExtractorFunc,
-		reBalanceHandler:  handler,
-		partitions:        make(chan Partition, 1000),
-		partitionMap:      make(map[string]*partition),
-		logger:            c.config.Logger,
+		mu:                    new(sync.Mutex),
+		recodeUuidExtractFunc: c.config.options.recodeUuidExtractorFunc,
+		reBalanceHandler:      handler,
+		partitions:            make(chan Partition, 1000),
+		partitionMap:          make(map[string]*partition),
+		logger:                c.config.Logger,
 	}
 	group, err := sarama.NewConsumerGroup(c.config.BootstrapServers, c.config.GroupId, c.config.Config)
 	if err != nil {
