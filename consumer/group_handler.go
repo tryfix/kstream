@@ -21,7 +21,7 @@ type groupHandler struct {
 	partitionMap          map[string]*partition
 	partitions            chan Partition
 	logger                log.Logger
-	recodeUuidExtractFunc RecodeUuidExtractFunc
+	recordUuidExtractFunc RecordUuidExtractFunc
 	mu                    *sync.Mutex
 	metrics               struct {
 		reporter         metrics.Reporter
@@ -93,7 +93,7 @@ func (h *groupHandler) ConsumeClaim(g sarama.ConsumerGroupSession, c sarama.Cons
 			Headers:   data.RecordHeaders(msg.Headers),
 		}
 
-		uuid := h.recodeUuidExtractFunc(record)
+		uuid := h.recordUuidExtractFunc(record)
 		record.UUID = uuid
 
 		h.logger.Trace("record received after " +

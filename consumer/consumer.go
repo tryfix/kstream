@@ -13,14 +13,14 @@ import (
 	"time"
 )
 
-type RecodeUuidExtractFunc func(message *data.Record) uuid.UUID
+type RecordUuidExtractFunc func(message *data.Record) uuid.UUID
 
 type consumerOptions struct {
-	recodeUuidExtractorFunc RecodeUuidExtractFunc
+	recordUuidExtractorFunc RecordUuidExtractFunc
 }
 
 func (opts *consumerOptions) applyDefault() {
-	opts.recodeUuidExtractorFunc = func(message *data.Record) uuid.UUID {
+	opts.recordUuidExtractorFunc = func(message *data.Record) uuid.UUID {
 		return uuid.New()
 	}
 }
@@ -34,9 +34,9 @@ func (opts *consumerOptions) apply(options ...Option) {
 
 type Option func(*consumerOptions)
 
-func WithRecodeExtractFunc(fn RecodeUuidExtractFunc) Option {
+func WithRecordUuidExtractFunc(fn RecordUuidExtractFunc) Option {
 	return func(options *consumerOptions) {
-		options.recodeUuidExtractorFunc = fn
+		options.recordUuidExtractorFunc = fn
 	}
 }
 
@@ -114,7 +114,7 @@ func (c *consumer) Consume(tps []string, handler ReBalanceHandler) (chan Partiti
 
 	c.saramaGroupHandler = &groupHandler{
 		mu:                    new(sync.Mutex),
-		recodeUuidExtractFunc: c.config.options.recodeUuidExtractorFunc,
+		recordUuidExtractFunc: c.config.options.recordUuidExtractorFunc,
 		reBalanceHandler:      handler,
 		partitions:            make(chan Partition, 1000),
 		partitionMap:          make(map[string]*partition),

@@ -26,7 +26,7 @@ func Init() {
 	).Log()
 
 	builderConfig := kstream.NewStreamBuilderConfig()
-	builderConfig.BootstrapServers = []string{`192.168.0.103:9092`}
+	builderConfig.BootstrapServers = []string{`localhost:9092`}
 	builderConfig.ApplicationId = `k_stream_example_1`
 	builderConfig.ConsumerCount = 1
 	builderConfig.Host = `localhost:8100`
@@ -73,7 +73,7 @@ func Init() {
 
 	stream := kstream.NewStreams(builder,
 		kstream.NotifyOnStart(synced),
-		kstream.WithConsumerOptions(consumer.WithRecodeExtractFunc(func(message *data.Record) uuid.UUID {
+		kstream.WithConsumerOptions(consumer.WithRecordUuidExtractFunc(func(message *data.Record) uuid.UUID {
 			// extract uuid from header
 			id, err := uuid.Parse(string(message.Key))
 			if err != nil {

@@ -31,7 +31,7 @@ type KSink struct {
 	KeyEncoderBuilder     encoding.Builder
 	ValEncoderBuilder     encoding.Builder
 	recordTransformer     func(ctx context.Context, in SinkRecord) (out SinkRecord, err error)
-	recordHeaderExtractor func(ctx context.Context, in SinkRecord) (out data.RecordHeaders, err error)
+	recordHeaderExtractor func(ctx context.Context, in SinkRecord) (data.RecordHeaders, error)
 	tombstoneFiler        func(ctx context.Context, in SinkRecord) (tombstone bool)
 }
 
@@ -140,14 +140,14 @@ func SinkWithProducer(p producer.Builder) SinkOption {
 	}
 }
 
-// Deprecated: Please use SinkWithRecodeHeaderExtractor instead
+// Deprecated: Please use SinkWithRecordHeaderExtractor instead
 func WithCustomRecord(f func(ctx context.Context, in SinkRecord) (out SinkRecord, err error)) SinkOption {
 	return func(sink *KSink) {
 		sink.recordTransformer = f
 	}
 }
 
-func SinkWithRecodeHeaderExtractor(f func(ctx context.Context, in SinkRecord) (headers data.RecordHeaders, err error)) SinkOption {
+func SinkWithRecordHeaderExtractor(f func(ctx context.Context, in SinkRecord) (headers data.RecordHeaders, err error)) SinkOption {
 	return func(sink *KSink) {
 		sink.recordHeaderExtractor = f
 	}
