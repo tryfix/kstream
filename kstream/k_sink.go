@@ -131,19 +131,27 @@ func (s *KSink) Info() map[string]string {
 	}
 }
 
+// Deprecated: Please use SinkWithProducer instead
 func WithProducer(p producer.Builder) SinkOption {
 	return func(sink *KSink) {
 		sink.ProducerBuilder = p
 	}
 }
 
+func SinkWithProducer(p producer.Builder) SinkOption {
+	return func(sink *KSink) {
+		sink.ProducerBuilder = p
+	}
+}
+
+// Deprecated: Please use SinkWithRecodeHeaderExtractor instead
 func WithCustomRecord(f func(ctx context.Context, in SinkRecord) (out SinkRecord, err error)) SinkOption {
 	return func(sink *KSink) {
 		sink.recordTransformer = f
 	}
 }
 
-func WithRecodeHeaderExtractor(f func(ctx context.Context, in SinkRecord) (headers data.RecordHeaders, err error)) SinkOption {
+func SinkWithRecodeHeaderExtractor(f func(ctx context.Context, in SinkRecord) (headers data.RecordHeaders, err error)) SinkOption {
 	return func(sink *KSink) {
 		sink.recordHeaderExtractor = f
 	}
