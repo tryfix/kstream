@@ -2,7 +2,6 @@ package kstream
 
 import (
 	"context"
-	"github.com/Shopify/sarama"
 	"github.com/tryfix/errors"
 	"github.com/tryfix/kstream/data"
 	kContext "github.com/tryfix/kstream/kstream/context"
@@ -14,24 +13,25 @@ import (
 
 type SinkRecord struct {
 	Key, Value interface{}
-	Timestamp  time.Time              // only set if kafka is version 0.10+, inner message timestamp
-	Headers    []*sarama.RecordHeader // only set if kafka is version 0.11+
+	Timestamp  time.Time          // only set if kafka is version 0.10+, inner message timestamp
+	Headers    data.RecordHeaders // only set if kafka is version 0.11+
 }
 
 type KSink struct {
-	Id                int32
-	KeyEncoder        encoding.Encoder
-	ValEncoder        encoding.Encoder
-	Producer          producer.Producer
-	ProducerBuilder   producer.Builder
-	name              string
-	TopicPrefix       string
-	topic             topic
-	Repartitioned     bool
-	info              map[string]string
-	KeyEncoderBuilder encoding.Builder
-	ValEncoderBuilder encoding.Builder
-	recordTransformer func(ctx context.Context, in SinkRecord) (out SinkRecord, err error)
+	Id                    int32
+	KeyEncoder            encoding.Encoder
+	ValEncoder            encoding.Encoder
+	Producer              producer.Producer
+	ProducerBuilder       producer.Builder
+	name                  string
+	TopicPrefix           string
+	topic                 topic
+	Repartitioned         bool
+	info                  map[string]string
+	KeyEncoderBuilder     encoding.Builder
+	ValEncoderBuilder     encoding.Builder
+	recordTransformer     func(ctx context.Context, in SinkRecord) (out SinkRecord, err error)
+	recordHeaderExtractor func(ctx context.Context, in SinkRecord) (out data.RecordHeaders, err error)
 }
 
 func (s *KSink) Childs() []topology.Node {
@@ -143,6 +143,12 @@ func WithCustomRecord(f func(ctx context.Context, in SinkRecord) (out SinkRecord
 	}
 }
 
+func WithRecodeHeaderExtractor(f func(ctx context.Context, in SinkRecord) (headers data.RecordHeaders, err error)) SinkOption {
+	return func(sink *KSink) {
+		sink.recordHeaderExtractor = f
+	}
+}
+
 func withPrefixTopic(topic topic) SinkOption {
 	return func(sink *KSink) {
 		sink.topic = topic
@@ -190,6 +196,21 @@ func (s *KSink) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut inter
 		vIn = customRecord.Value
 		record.Headers = customRecord.Headers
 		record.Timestamp = customRecord.Timestamp
+	}
+
+	if s.recordHeaderExtractor != nil {
+		meta := kContext.Meta(ctx)
+		headers, err := s.recordHeaderExtractor(ctx, SinkRecord{
+			Key:       kIn,
+			Value:     vIn,
+			Timestamp: record.Timestamp,
+			Headers:   meta.Headers.All(),
+		})
+		if err != nil {
+			return nil, nil, false, errors.WithPrevious(err, `record extract failed`)
+		}
+
+		record.Headers = headers
 	}
 
 	keyByt, err := s.KeyEncoder.Encode(kIn)
