@@ -21,12 +21,12 @@ func Init() {
 	)
 
 	Logger := log.NewLog(
-		log.WithLevel(`INFO`),
+		log.WithLevel(`TRACE`),
 		log.WithColors(true),
 	).Log()
 
 	builderConfig := kstream.NewStreamBuilderConfig()
-	builderConfig.BootstrapServers = []string{`192.168.0.103:9092`}
+	builderConfig.BootstrapServers = []string{`localhost:9092`}
 	builderConfig.ApplicationId = `k_stream_example_1`
 	builderConfig.ConsumerCount = 1
 	builderConfig.Host = `localhost:8100`

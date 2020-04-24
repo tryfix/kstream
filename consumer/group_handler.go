@@ -83,7 +83,6 @@ func (h *groupHandler) ConsumeClaim(g sarama.ConsumerGroupSession, c sarama.Cons
 			`topic`:     msg.Topic,
 			`partition`: fmt.Sprint(msg.Partition),
 		})
-		h.logger.Trace("record received after " + t.String() + " for " + tp.String() + " with key: " + string(msg.Key) + " and value: " + string(msg.Value))
 
 		record := &data.Record{
 			Key:       msg.Key,
@@ -96,16 +95,22 @@ func (h *groupHandler) ConsumeClaim(g sarama.ConsumerGroupSession, c sarama.Cons
 			Headers:   data.RecordHeaders(msg.Headers),
 		}
 
-		if h.recodeExtractFunc == nil {
-			ch <- record
-			continue
+		if h.recodeExtractFunc != nil {
+			rc, err := h.recodeExtractFunc(record)
+			if err != nil {
+				h.logger.Error(fmt.Sprintf(`consumer record extract error due to %s`, err))
+				continue
+			}
+			record = rc
 		}
 
-		record, err := h.recodeExtractFunc(record)
-		if err != nil {
-			h.logger.Error(fmt.Sprintf(`consumer record extract error due to %s`, err))
-			continue
-		}
+		h.logger.Trace("record received after " +
+			t.String() +
+			" for " + tp.String() +
+			" with key: " + string(msg.Key) +
+			" and value: " + string(msg.Value) +
+			" with record-id [" + record.UUID.String() + "]")
+
 		ch <- record
 	}
 
