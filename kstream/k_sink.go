@@ -52,6 +52,8 @@ func (s *KSink) Build() (topology.Node, error) {
 	}
 
 	s.Producer = p
+	s.KeyEncoder = s.KeyEncoderBuilder()
+	s.ValEncoder = s.ValEncoderBuilder()
 
 	return s, nil
 }
