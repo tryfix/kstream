@@ -5,11 +5,35 @@ import (
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/tryfix/errors"
+	"github.com/tryfix/kstream/data"
 	"github.com/tryfix/log"
 	"github.com/tryfix/metrics"
 	"sync"
 	"time"
 )
+
+type RecodeExtractFunc func(message *data.Record) (*data.Record, error)
+
+type consumerOptions struct {
+	recodeExtractorFunc RecodeExtractFunc
+}
+
+func (opts *consumerOptions) applyDefault() {}
+
+func (opts *consumerOptions) apply(options ...Option) {
+	for _, option := range options {
+		option(opts)
+	}
+
+}
+
+type Option func(*consumerOptions)
+
+func WithRecodeExtractFunc(fn RecodeExtractFunc) Option {
+	return func(options *consumerOptions) {
+		options.recodeExtractorFunc = fn
+	}
+}
 
 type TopicPartition struct {
 	Topic     string
@@ -57,10 +81,13 @@ type consumer struct {
 	stopped            chan bool
 }
 
-func NewConsumer(config *Config) (Consumer, error) {
+func NewConsumer(config *Config, options ...Option) (Consumer, error) {
 	if err := config.validate(); err != nil {
 		return nil, err
 	}
+
+	// apply options
+	config.options.apply(options...)
 
 	config.Logger = config.Logger.NewLog(log.Prefixed(`consumer`))
 
@@ -81,11 +108,12 @@ func NewConsumer(config *Config) (Consumer, error) {
 func (c *consumer) Consume(tps []string, handler ReBalanceHandler) (chan Partition, error) {
 
 	c.saramaGroupHandler = &groupHandler{
-		mu:               new(sync.Mutex),
-		reBalanceHandler: handler,
-		partitions:       make(chan Partition, 1000),
-		partitionMap:     make(map[string]*partition),
-		logger:           c.config.Logger,
+		mu:                new(sync.Mutex),
+		recodeExtractFunc: c.config.options.recodeExtractorFunc,
+		reBalanceHandler:  handler,
+		partitions:        make(chan Partition, 1000),
+		partitionMap:      make(map[string]*partition),
+		logger:            c.config.Logger,
 	}
 	group, err := sarama.NewConsumerGroup(c.config.BootstrapServers, c.config.GroupId, c.config.Config)
 	if err != nil {

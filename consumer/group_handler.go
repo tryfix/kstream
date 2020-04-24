@@ -18,12 +18,13 @@ type ReBalanceHandler interface {
 }
 
 type groupHandler struct {
-	reBalanceHandler ReBalanceHandler
-	partitionMap     map[string]*partition
-	partitions       chan Partition
-	logger           log.Logger
-	mu               *sync.Mutex
-	metrics          struct {
+	reBalanceHandler  ReBalanceHandler
+	partitionMap      map[string]*partition
+	partitions        chan Partition
+	logger            log.Logger
+	recodeExtractFunc RecodeExtractFunc
+	mu                *sync.Mutex
+	metrics           struct {
 		reporter         metrics.Reporter
 		reBalancing      metrics.Gauge
 		commitLatency    metrics.Observer
@@ -84,7 +85,7 @@ func (h *groupHandler) ConsumeClaim(g sarama.ConsumerGroupSession, c sarama.Cons
 		})
 		h.logger.Trace("record received after " + t.String() + " for " + tp.String() + " with key: " + string(msg.Key) + " and value: " + string(msg.Value))
 
-		ch <- &data.Record{
+		record := &data.Record{
 			Key:       msg.Key,
 			Value:     msg.Value,
 			Offset:    msg.Offset,
@@ -92,8 +93,20 @@ func (h *groupHandler) ConsumeClaim(g sarama.ConsumerGroupSession, c sarama.Cons
 			Partition: msg.Partition,
 			Timestamp: msg.Timestamp,
 			UUID:      uuid.New(),
-			Headers:   msg.Headers,
+			Headers:   data.SaramaHeaders(msg.Headers),
 		}
+
+		if h.recodeExtractFunc == nil {
+			ch <- record
+			continue
+		}
+
+		record, err := h.recodeExtractFunc(record)
+		if err != nil {
+			h.logger.Error(fmt.Sprintf(`consumer record extract error due to %s`, err))
+			continue
+		}
+		ch <- record
 	}
 
 	return nil

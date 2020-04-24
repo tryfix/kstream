@@ -180,7 +180,7 @@ func (s *KSink) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut inter
 			Key:       kIn,
 			Value:     vIn,
 			Timestamp: record.Timestamp,
-			Headers:   meta.Headers,
+			Headers:   meta.Headers.All(),
 		})
 		if err != nil {
 			return nil, nil, false, err
@@ -188,7 +188,7 @@ func (s *KSink) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut inter
 
 		kIn = customRecord.Key
 		vIn = customRecord.Value
-		record.Headers = customRecord.Headers
+		record.Headers = data.SaramaHeaders(customRecord.Headers)
 		record.Timestamp = customRecord.Timestamp
 	}
 

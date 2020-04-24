@@ -13,6 +13,7 @@ type Config struct {
 	BootstrapServers []string
 	MetricsReporter  metrics.Reporter
 	Logger           log.Logger
+	options          *consumerOptions
 	*sarama.Config
 }
 
@@ -45,4 +46,6 @@ func (c *Config) setDefaults() {
 	c.ChannelBufferSize = 100
 	c.MetricsReporter = metrics.NoopReporter()
 	c.Logger = log.NewNoopLogger()
+	c.options = new(consumerOptions)
+	c.options.applyDefault()
 }

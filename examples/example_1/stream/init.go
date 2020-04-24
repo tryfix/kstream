@@ -1,6 +1,9 @@
 package stream
 
 import (
+	"github.com/google/uuid"
+	"github.com/tryfix/kstream/consumer"
+	"github.com/tryfix/kstream/data"
 	"github.com/tryfix/kstream/examples/example_1/encoders"
 	"github.com/tryfix/kstream/kstream"
 	"github.com/tryfix/kstream/kstream/worker_pool"
@@ -68,7 +71,18 @@ func Init() {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 
-	stream := kstream.NewStreams(builder, kstream.NotifyOnStart(synced))
+	stream := kstream.NewStreams(builder,
+		kstream.NotifyOnStart(synced),
+		kstream.WithConsumerOptions(consumer.WithRecodeExtractFunc(func(message *data.Record) (*data.Record, error) {
+			// extract uuid from header
+			id, err := uuid.Parse(string(message.Key))
+			if err != nil {
+				return nil, err
+			}
+			message.UUID = id
+			return message, nil
+		})),
+	)
 	go func() {
 		select {
 		case <-signals:
