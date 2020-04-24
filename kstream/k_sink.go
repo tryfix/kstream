@@ -239,6 +239,8 @@ func (s *KSink) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut inter
 		record.Value = valByt
 	}
 
+	record.Headers = skinRecord.Headers
+
 	if _, _, err := s.Producer.Produce(ctx, record); err != nil {
 		return nil, nil, false, err
 	}
