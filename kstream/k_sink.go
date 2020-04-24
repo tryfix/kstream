@@ -32,6 +32,7 @@ type KSink struct {
 	ValEncoderBuilder     encoding.Builder
 	recordTransformer     func(ctx context.Context, in SinkRecord) (out SinkRecord, err error)
 	recordHeaderExtractor func(ctx context.Context, in SinkRecord) (out data.RecordHeaders, err error)
+	tombstoneFiler        func(ctx context.Context, in SinkRecord) (tombstone bool)
 }
 
 func (s *KSink) Childs() []topology.Node {
@@ -51,14 +52,13 @@ func (s *KSink) Build() (topology.Node, error) {
 	}
 
 	return &KSink{
-		KeyEncoder:        s.KeyEncoderBuilder(),
-		ValEncoder:        s.ValEncoderBuilder(),
-		Producer:          p,
-		TopicPrefix:       s.TopicPrefix,
-		name:              s.name,
-		topic:             s.topic,
-		info:              s.info,
-		recordTransformer: s.recordTransformer,
+		KeyEncoder:  s.KeyEncoderBuilder(),
+		ValEncoder:  s.ValEncoderBuilder(),
+		Producer:    p,
+		TopicPrefix: s.TopicPrefix,
+		name:        s.name,
+		topic:       s.topic,
+		info:        s.info,
 	}, nil
 }
 
@@ -157,6 +157,12 @@ func SinkWithRecodeHeaderExtractor(f func(ctx context.Context, in SinkRecord) (h
 	}
 }
 
+func SinkWithTombstoneFilter(f func(ctx context.Context, in SinkRecord) (tombstone bool)) SinkOption {
+	return func(sink *KSink) {
+		sink.tombstoneFiler = f
+	}
+}
+
 func withPrefixTopic(topic topic) SinkOption {
 	return func(sink *KSink) {
 		sink.topic = topic
@@ -171,6 +177,15 @@ func NewKSinkBuilder(name string, id int32, topic topic, keyEncoder encoding.Bui
 		topic:             topic,
 		name:              name,
 		Id:                id,
+		tombstoneFiler: func(ctx context.Context, in SinkRecord) (tombstone bool) {
+			return false
+		},
+		recordHeaderExtractor: func(ctx context.Context, in SinkRecord) (out data.RecordHeaders, err error) {
+			return in.Headers, nil
+		},
+		recordTransformer: func(ctx context.Context, in SinkRecord) (out SinkRecord, err error) {
+			return in, nil
+		},
 	}
 
 	builder.applyOptions(options...)
@@ -187,51 +202,43 @@ func (s *KSink) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut inter
 	record.Timestamp = time.Now()
 	record.Topic = s.topic(s.TopicPrefix)
 
-	if s.recordTransformer != nil {
-
-		meta := kContext.Meta(ctx)
-		customRecord, err := s.recordTransformer(ctx, SinkRecord{
-			Key:       kIn,
-			Value:     vIn,
-			Timestamp: record.Timestamp,
-			Headers:   meta.Headers.All(),
-		})
-		if err != nil {
-			return nil, nil, false, err
-		}
-
-		kIn = customRecord.Key
-		vIn = customRecord.Value
-		record.Headers = customRecord.Headers
-		record.Timestamp = customRecord.Timestamp
+	skinRecord := SinkRecord{
+		Key:       kIn,
+		Value:     vIn,
+		Timestamp: record.Timestamp,
+		Headers:   kContext.Meta(ctx).Headers.All(),
 	}
 
-	if s.recordHeaderExtractor != nil {
-		meta := kContext.Meta(ctx)
-		headers, err := s.recordHeaderExtractor(ctx, SinkRecord{
-			Key:       kIn,
-			Value:     vIn,
-			Timestamp: record.Timestamp,
-			Headers:   meta.Headers.All(),
-		})
-		if err != nil {
-			return nil, nil, false, errors.WithPrevious(err, `record extract failed`)
-		}
-
-		record.Headers = headers
-	}
-
-	keyByt, err := s.KeyEncoder.Encode(kIn)
+	// Deprecated: apply custom record transformations
+	customRecord, err := s.recordTransformer(ctx, skinRecord)
 	if err != nil {
 		return nil, nil, false, err
 	}
+	skinRecord.Key = customRecord.Key
+	skinRecord.Value = customRecord.Value
+	skinRecord.Headers = customRecord.Headers
+	skinRecord.Timestamp = customRecord.Timestamp
+
+	// apply data record headers
+	headers, err := s.recordHeaderExtractor(ctx, skinRecord)
+	if err != nil {
+		return nil, nil, false, errors.WithPrevious(err, `record extract failed`)
+	}
+	skinRecord.Headers = headers
+
+	keyByt, err := s.KeyEncoder.Encode(kIn)
+	if err != nil {
+		return nil, nil, false, errors.WithPrevious(err, `sink key encode error`)
+	}
 	record.Key = keyByt
-	if vIn == nil {
+	// if the record value is null or marked as null with a tombstoneFiler set the record value as null
+	tombstoned := s.tombstoneFiler(ctx, skinRecord)
+	if vIn == nil || tombstoned {
 		record.Value = nil
 	} else {
 		valByt, err := s.ValEncoder.Encode(vIn)
 		if err != nil {
-			return nil, nil, false, err
+			return nil, nil, false, errors.WithPrevious(err, `sink value encode error`)
 		}
 		record.Value = valByt
 	}
