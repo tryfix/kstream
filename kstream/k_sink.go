@@ -220,17 +220,17 @@ func (s *KSink) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut inter
 	}
 	skinRecord.Headers = headers
 
-	keyByt, err := s.KeyEncoder.Encode(kIn)
+	keyByt, err := s.KeyEncoder.Encode(skinRecord.Key)
 	if err != nil {
 		return nil, nil, false, errors.WithPrevious(err, `sink key encode error`)
 	}
 	record.Key = keyByt
 	// if the record value is null or marked as null with a tombstoneFiler set the record value as null
 	tombstoned := s.tombstoneFiler(ctx, skinRecord)
-	if vIn == nil || tombstoned {
+	if skinRecord.Key == nil || tombstoned {
 		record.Value = nil
 	} else {
-		valByt, err := s.ValEncoder.Encode(vIn)
+		valByt, err := s.ValEncoder.Encode(skinRecord.Value)
 		if err != nil {
 			return nil, nil, false, errors.WithPrevious(err, `sink value encode error`)
 		}
