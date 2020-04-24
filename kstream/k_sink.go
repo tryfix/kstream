@@ -48,18 +48,12 @@ func (s *KSink) Build() (topology.Node, error) {
 		//id: producer.NewProducerId(s.topic(s.topic(s.TopicPrefix))),
 	})
 	if err != nil {
-		return nil, errors.WithPrevious(err, `cannot Build producer`)
+		return nil, errors.WithPrevious(err, `producer build failed`)
 	}
 
-	return &KSink{
-		KeyEncoder:  s.KeyEncoderBuilder(),
-		ValEncoder:  s.ValEncoderBuilder(),
-		Producer:    p,
-		TopicPrefix: s.TopicPrefix,
-		name:        s.name,
-		topic:       s.topic,
-		info:        s.info,
-	}, nil
+	s.Producer = p
+
+	return s, nil
 }
 
 func (s *KSink) AddChildBuilder(builder topology.NodeBuilder) {
