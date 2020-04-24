@@ -8,14 +8,14 @@ import (
 	"time"
 )
 
-type RecordHeaders interface {
-	Read(name []byte) []byte
-	All() []*sarama.RecordHeader
-}
+//type RecordHeaders interface {
+//	Read(name []byte) []byte
+//	All() []*sarama.RecordHeader
+//}
 
-type SaramaHeaders []*sarama.RecordHeader
+type RecordHeaders []*sarama.RecordHeader
 
-func (h SaramaHeaders) Read(name []byte) []byte {
+func (h RecordHeaders) Read(name []byte) []byte {
 	for _, header := range h {
 		if bytes.Equal(header.Key, name) {
 			return header.Value
@@ -25,7 +25,7 @@ func (h SaramaHeaders) Read(name []byte) []byte {
 	return nil
 }
 
-func (h SaramaHeaders) All() []*sarama.RecordHeader {
+func (h RecordHeaders) All() []*sarama.RecordHeader {
 	return h
 }
 

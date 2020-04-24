@@ -93,7 +93,7 @@ func (h *groupHandler) ConsumeClaim(g sarama.ConsumerGroupSession, c sarama.Cons
 			Partition: msg.Partition,
 			Timestamp: msg.Timestamp,
 			UUID:      uuid.New(),
-			Headers:   data.SaramaHeaders(msg.Headers),
+			Headers:   data.RecordHeaders(msg.Headers),
 		}
 
 		if h.recodeExtractFunc == nil {

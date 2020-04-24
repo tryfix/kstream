@@ -211,7 +211,7 @@ MainLoop:
 				Partition: msg.Partition,
 				Timestamp: msg.Timestamp,
 				UUID:      uuid.New(),
-				Headers:   data.SaramaHeaders(msg.Headers),
+				Headers:   msg.Headers,
 			}
 
 			//if highWatermark == 0 || highWatermark-1 == msg.Offset {

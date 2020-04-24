@@ -5,7 +5,7 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/tryfix/errors"
 	"github.com/tryfix/kstream/data"
-	context2 "github.com/tryfix/kstream/kstream/context"
+	kContext "github.com/tryfix/kstream/kstream/context"
 	"github.com/tryfix/kstream/kstream/encoding"
 	"github.com/tryfix/kstream/kstream/topology"
 	"github.com/tryfix/kstream/producer"
@@ -175,7 +175,7 @@ func (s *KSink) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut inter
 
 	if s.recordTransformer != nil {
 
-		meta := context2.Meta(ctx)
+		meta := kContext.Meta(ctx)
 		customRecord, err := s.recordTransformer(ctx, SinkRecord{
 			Key:       kIn,
 			Value:     vIn,
@@ -188,7 +188,7 @@ func (s *KSink) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut inter
 
 		kIn = customRecord.Key
 		vIn = customRecord.Value
-		record.Headers = data.SaramaHeaders(customRecord.Headers)
+		record.Headers = customRecord.Headers
 		record.Timestamp = customRecord.Timestamp
 	}
 
