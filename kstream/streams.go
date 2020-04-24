@@ -20,12 +20,14 @@ type StreamInstance struct {
 	logger                 log.Logger
 	consumer               consumer.Builder
 	builder                *StreamBuilder
+	instancesOptions       *instancesOptions
 	reBalanceHandler       consumer.ReBalanceHandler
 }
 
 type instancesOptions struct {
 	notifyOnSynced   chan bool
 	reBalanceHandler consumer.ReBalanceHandler
+	consumerOptions  []consumer.Option
 }
 
 func NotifyOnStart(c chan bool) InstancesOptions {
@@ -37,6 +39,12 @@ func NotifyOnStart(c chan bool) InstancesOptions {
 func WithReBalanceHandler(h consumer.ReBalanceHandler) InstancesOptions {
 	return func(config *instancesOptions) {
 		config.reBalanceHandler = h
+	}
+}
+
+func WithConsumerOptions(opt consumer.Option) InstancesOptions {
+	return func(config *instancesOptions) {
+		config.consumerOptions = append(config.consumerOptions, opt)
 	}
 }
 
@@ -89,6 +97,7 @@ func NewStreams(builder *StreamBuilder, options ...InstancesOptions) *Instances 
 			logger:                 logger,
 			consumer:               builder.defaultBuilders.Consumer,
 			builder:                builder,
+			instancesOptions:       opts,
 		}
 
 		if opts.reBalanceHandler != nil {
@@ -256,7 +265,10 @@ func (s *StreamInstance) Start(wg *sync.WaitGroup) error {
 
 	}*/
 
-	c, err := s.consumer.Build(consumer.BuilderWithId(fmt.Sprintf(`group_consumer_%s`, s.id)))
+	c, err := s.consumer.Build(
+		consumer.BuilderWithId(fmt.Sprintf(`group_consumer_%s`, s.id)),
+		consumer.BuilderWithOptions(s.instancesOptions.consumerOptions...),
+	)
 	if err != nil {
 		return errors.WithPrevious(err, `cannot initiate consumer`)
 	}

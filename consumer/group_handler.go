@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/Shopify/sarama"
-	"github.com/google/uuid"
 	"github.com/tryfix/kstream/data"
 	"github.com/tryfix/log"
 	"github.com/tryfix/metrics"
@@ -18,12 +17,13 @@ type ReBalanceHandler interface {
 }
 
 type groupHandler struct {
-	reBalanceHandler ReBalanceHandler
-	partitionMap     map[string]*partition
-	partitions       chan Partition
-	logger           log.Logger
-	mu               *sync.Mutex
-	metrics          struct {
+	reBalanceHandler      ReBalanceHandler
+	partitionMap          map[string]*partition
+	partitions            chan Partition
+	logger                log.Logger
+	recordUuidExtractFunc RecordUuidExtractFunc
+	mu                    *sync.Mutex
+	metrics               struct {
 		reporter         metrics.Reporter
 		reBalancing      metrics.Gauge
 		commitLatency    metrics.Observer
@@ -82,18 +82,28 @@ func (h *groupHandler) ConsumeClaim(g sarama.ConsumerGroupSession, c sarama.Cons
 			`topic`:     msg.Topic,
 			`partition`: fmt.Sprint(msg.Partition),
 		})
-		h.logger.Trace("record received after " + t.String() + " for " + tp.String() + " with key: " + string(msg.Key) + " and value: " + string(msg.Value))
 
-		ch <- &data.Record{
+		record := &data.Record{
 			Key:       msg.Key,
 			Value:     msg.Value,
 			Offset:    msg.Offset,
 			Topic:     msg.Topic,
 			Partition: msg.Partition,
 			Timestamp: msg.Timestamp,
-			UUID:      uuid.New(),
-			Headers:   msg.Headers,
+			Headers:   data.RecordHeaders(msg.Headers),
 		}
+
+		uuid := h.recordUuidExtractFunc(record)
+		record.UUID = uuid
+
+		h.logger.Trace("record received after " +
+			t.String() +
+			" for " + tp.String() +
+			" with key: " + string(msg.Key) +
+			" and value: " + string(msg.Value) +
+			" with record-id [" + record.UUID.String() + "]")
+
+		ch <- record
 	}
 
 	return nil

@@ -2,7 +2,6 @@ package context
 
 import (
 	"context"
-	"github.com/Shopify/sarama"
 	"github.com/tryfix/errors"
 	"github.com/tryfix/kstream/data"
 	"github.com/tryfix/traceable-context"
@@ -16,7 +15,7 @@ type RecordMeta struct {
 	Partition int32
 	Offset    int64
 	Timestamp time.Time
-	Headers   []*sarama.RecordHeader
+	Headers   data.RecordHeaders
 }
 
 type Context struct {

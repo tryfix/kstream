@@ -22,7 +22,7 @@ func TestFromRecord(t *testing.T) {
 	//	Offset:         0,
 	//	Timestamp:      time.Time{},
 	//	BlockTimestamp: time.Time{},
-	//	Headers:        nil,
+	//	RecordHeaders:        nil,
 	//	UUID:           uuid.UUID{},
 	//}
 	//

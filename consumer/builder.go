@@ -13,6 +13,12 @@ func BuilderWithId(id string) BuilderOption {
 	}
 }
 
+func BuilderWithOptions(options ...Option) BuilderOption {
+	return func(config *Config) {
+		config.options.apply(options...)
+	}
+}
+
 func BuilderWithGroupId(id string) BuilderOption {
 	return func(config *Config) {
 		config.GroupId = id
@@ -49,12 +55,6 @@ func NewBuilder() Builder {
 func (b *builder) Config() *Config {
 	return b.config
 }
-
-//func (b *builder) Configure(c *Config) Builder {
-//	return &builder{
-//		config: c,
-//	}
-//}
 
 func (b *builder) Build(options ...BuilderOption) (Consumer, error) {
 	conf := *b.config

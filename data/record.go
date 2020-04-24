@@ -1,15 +1,32 @@
 package data
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/google/uuid"
 	"time"
 )
 
-type RecordHeader struct {
-	Key   []byte
-	Value []byte
+//type RecordHeaders interface {
+//	Read(name []byte) []byte
+//	All() []*sarama.RecordHeader
+//}
+
+type RecordHeaders []*sarama.RecordHeader
+
+func (h RecordHeaders) Read(name []byte) []byte {
+	for _, header := range h {
+		if bytes.Equal(header.Key, name) {
+			return header.Value
+		}
+	}
+
+	return nil
+}
+
+func (h RecordHeaders) All() []*sarama.RecordHeader {
+	return h
 }
 
 type Record struct {
@@ -17,9 +34,9 @@ type Record struct {
 	Topic          string
 	Partition      int32
 	Offset         int64
-	Timestamp      time.Time              // only set if kafka is version 0.10+, inner message timestamp
-	BlockTimestamp time.Time              // only set if kafka is version 0.10+, outer (compressed) block timestamp
-	Headers        []*sarama.RecordHeader // only set if kafka is version 0.11+
+	Timestamp      time.Time     // only set if kafka is version 0.10+, inner message timestamp
+	BlockTimestamp time.Time     // only set if kafka is version 0.10+, outer (compressed) block timestamp
+	Headers        RecordHeaders // only set if kafka is version 0.11+
 	UUID           uuid.UUID
 }
 

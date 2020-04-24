@@ -125,7 +125,7 @@ func (p *saramaProducer) Produce(ctx context.Context, message *data.Record) (par
 		Timestamp: t,
 	}
 
-	for _, header := range message.Headers {
+	for _, header := range message.Headers.All() {
 		m.Headers = append(m.Headers, *header)
 	}
 
