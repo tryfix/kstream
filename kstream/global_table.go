@@ -30,9 +30,7 @@ const GlobalTableOffsetLatest GlobalTableOffset = -1
 var globalTableStoreWriter = func(r *data.Record, store store.Store) error {
 	// tombstone handling
 	if r.Value == nil {
-		if err := store.Backend().Delete(r.Key); err != nil {
-			return err
-		}
+		return store.Backend().Delete(r.Key)
 	}
 
 	return store.Backend().Set(r.Key, r.Value, 0)
