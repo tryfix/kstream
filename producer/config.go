@@ -34,7 +34,7 @@ func (c *Config) validate() error {
 
 func (c *Config) setDefaults() {
 	c.Config = sarama.NewConfig()
-	c.Producer.RequiredAcks = sarama.RequiredAcks(c.RequiredAcks)
+	c.Producer.RequiredAcks = sarama.RequiredAcks(WaitForAll)
 	c.Producer.Return.Errors = true
 	c.Producer.Return.Successes = true
 	c.Logger = log.NewNoopLogger()
