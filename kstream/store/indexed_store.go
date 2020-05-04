@@ -51,7 +51,7 @@ func (i *indexedStore) Set(ctx context.Context, key, val interface{}, expiry tim
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	for _, index := range i.indexes {
-		if err := index.Write(key.(string), val); err != nil {
+		if err := index.Write(key, val); err != nil {
 			return err
 		}
 	}
@@ -68,7 +68,7 @@ func (i *indexedStore) Delete(ctx context.Context, key interface{}) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	for _, index := range i.indexes {
-		if err := index.Delete(key.(string), val); err != nil {
+		if err := index.Delete(key, val); err != nil {
 			return err
 		}
 	}
