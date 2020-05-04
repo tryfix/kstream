@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/tryfix/kstream/examples/example_1/events"
-	kstream "github.com/tryfix/kstream/kstream"
+	"github.com/tryfix/kstream/kstream"
 	"github.com/tryfix/kstream/kstream/branch"
 	"github.com/tryfix/kstream/kstream/encoding"
 	"time"
