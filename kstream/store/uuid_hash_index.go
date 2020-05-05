@@ -34,7 +34,7 @@ func (s *uuidHashIndex) Write(key, value interface{}) error {
 	if !ok {
 		s.indexes[hashKey] = make(map[interface{}]bool)
 	}
-	s.indexes[hashKey][key.(interface{})] = true
+	s.indexes[hashKey][key] = true
 	return nil
 }
 
@@ -46,7 +46,7 @@ func (s *uuidHashIndex) Delete(key, value interface{}) error {
 		return fmt.Errorf(`hashKey %s does not exist for %s`, hashKey, s.name)
 	}
 
-	delete(s.indexes[hashKey], key.(interface{}))
+	delete(s.indexes[hashKey], key)
 	return nil
 }
 
