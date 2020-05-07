@@ -74,6 +74,7 @@ func (dbs *DefaultBuilders) build(options ...BuilderOption) {
 	dbs.Consumer.Config().BootstrapServers = dbs.configs.BootstrapServers
 	dbs.Consumer.Config().MetricsReporter = dbs.configs.MetricsReporter
 	dbs.Consumer.Config().Logger = dbs.configs.Logger
+	dbs.Consumer.Config().Consumer = dbs.configs.Consumer.Consumer
 
 	if dbs.OffsetManager == nil {
 		dbs.OffsetManager = offsets.NewManager(&offsets.Config{
@@ -96,5 +97,6 @@ func (dbs *DefaultBuilders) build(options ...BuilderOption) {
 	dbs.PartitionConsumer.Config().BootstrapServers = dbs.configs.BootstrapServers
 	dbs.PartitionConsumer.Config().MetricsReporter = dbs.configs.MetricsReporter
 	dbs.PartitionConsumer.Config().Logger = dbs.configs.Logger
+	dbs.PartitionConsumer.Config().Config.Consumer = dbs.configs.Consumer.Consumer
 
 }
