@@ -1,6 +1,7 @@
 package store
 
 import (
+	"github.com/google/uuid"
 	"reflect"
 	"strings"
 	"testing"
@@ -109,6 +110,27 @@ func TestHashIndex_Write(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(data, []interface{}{`100`}) {
+		t.Errorf("expect []interface{}{`100`} have %#v", data)
+	}
+}
+
+func TestHashIndex_WriteUuidKey(t *testing.T) {
+	index := NewStringHashIndex(`foo`, func(key, val interface{}) (idx string) {
+		return strings.Split(val.(string), `,`)[0]
+	})
+
+	uid := uuid.New()
+
+	if err := index.Write(uid, `111,222`); err != nil {
+		t.Error(err)
+	}
+
+	data, err := index.Read(`111`)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !reflect.DeepEqual(data, []interface{}{uid}) {
 		t.Errorf("expect []interface{}{`100`} have %#v", data)
 	}
 }

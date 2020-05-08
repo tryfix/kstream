@@ -11,7 +11,7 @@ type KeyMapper func(key, val interface{}) (idx string)
 var UnknownIndex = errors.New(`index does not exist`)
 
 type stringHashIndex struct {
-	indexes map[string]map[string]bool // indexKey:recordKey:bool
+	indexes map[string]map[interface{}]bool // indexKey:recordKey:bool
 	mapper  KeyMapper
 	mu      *sync.Mutex
 	name    string
@@ -19,7 +19,7 @@ type stringHashIndex struct {
 
 func NewStringHashIndex(name string, mapper KeyMapper) Index {
 	return &stringHashIndex{
-		indexes: make(map[string]map[string]bool),
+		indexes: make(map[string]map[interface{}]bool),
 		mapper:  mapper,
 		mu:      new(sync.Mutex),
 		name:    name,
@@ -36,9 +36,9 @@ func (s *stringHashIndex) Write(key, value interface{}) error {
 	hashKey := s.mapper(key, value)
 	_, ok := s.indexes[hashKey]
 	if !ok {
-		s.indexes[hashKey] = make(map[string]bool)
+		s.indexes[hashKey] = make(map[interface{}]bool)
 	}
-	s.indexes[hashKey][key.(string)] = true
+	s.indexes[hashKey][key] = true
 	return nil
 }
 
@@ -50,7 +50,7 @@ func (s *stringHashIndex) Delete(key, value interface{}) error {
 		return fmt.Errorf(`hashKey %s does not exist for %s`, hashKey, s.name)
 	}
 
-	delete(s.indexes[hashKey], key.(string))
+	delete(s.indexes[hashKey], key)
 	return nil
 }
 

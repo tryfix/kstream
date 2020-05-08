@@ -7,7 +7,7 @@ import (
 )
 
 type uuidHashIndex struct {
-	indexes map[uuid.UUID]map[uuid.UUID]bool // indexKey:recordKey:bool
+	indexes map[uuid.UUID]map[interface{}]bool // indexKey:recordKey:bool
 	mapper  func(key, val interface{}) (idx uuid.UUID)
 	mu      *sync.Mutex
 	name    string
@@ -15,7 +15,7 @@ type uuidHashIndex struct {
 
 func NewUuidHashIndex(name string, mapper func(key, val interface{}) (idx uuid.UUID)) Index {
 	return &uuidHashIndex{
-		indexes: make(map[uuid.UUID]map[uuid.UUID]bool),
+		indexes: make(map[uuid.UUID]map[interface{}]bool),
 		mapper:  mapper,
 		mu:      new(sync.Mutex),
 		name:    name,
@@ -32,9 +32,9 @@ func (s *uuidHashIndex) Write(key, value interface{}) error {
 	hashKey := s.mapper(key, value)
 	_, ok := s.indexes[hashKey]
 	if !ok {
-		s.indexes[hashKey] = make(map[uuid.UUID]bool)
+		s.indexes[hashKey] = make(map[interface{}]bool)
 	}
-	s.indexes[hashKey][key.(uuid.UUID)] = true
+	s.indexes[hashKey][key] = true
 	return nil
 }
 
@@ -46,7 +46,7 @@ func (s *uuidHashIndex) Delete(key, value interface{}) error {
 		return fmt.Errorf(`hashKey %s does not exist for %s`, hashKey, s.name)
 	}
 
-	delete(s.indexes[hashKey], key.(uuid.UUID))
+	delete(s.indexes[hashKey], key)
 	return nil
 }
 
