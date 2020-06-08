@@ -292,6 +292,7 @@ func MakeEndpoints(host string, registry Registry, logger log.Logger) {
 				logger.Error(err)
 				return
 			}
+			return
 		}
 
 		idx, err := indexdStore.GetIndex(request.Context(), indexName)
@@ -309,7 +310,8 @@ func MakeEndpoints(host string, registry Registry, logger log.Logger) {
 		for key, values := range idx.Values() {
 			byt, err := json.Marshal(key)
 			if err != nil {
-				return
+				h.logger.Error(err)
+				continue
 			}
 
 			encoded[string(byt)] = values
