@@ -2,23 +2,33 @@ package store
 
 import (
 	"context"
-	"errors"
+	nativeErrors "errors"
 	"fmt"
+	"github.com/tryfix/errors"
 	"github.com/tryfix/kstream/kstream/encoding"
+	//goEncoding "encoding"
 	"sync"
 	"time"
 )
 
 type Index interface {
-	Name() string
+	String() string
 	Write(key, value interface{}) error
-	Delete(val, value interface{}) error
+	WriteHash(hash, key interface{}) error
+	Hash(key, val interface{}) (hash interface{})
+	Delete(key, value interface{}) error
 	Read(index interface{}) ([]interface{}, error)
+	Keys() []interface{}
+	Values() map[interface{}][]interface{}
+	ValueIndexed(index, value interface{}) (bool, error)
+	//goEncoding.TextMarshaler
+	//goEncoding.TextUnmarshaler
 }
 
 type IndexedStore interface {
 	Store
 	GetIndex(ctx context.Context, name string) (Index, error)
+	Indexes() []Index
 	GetIndexedRecords(ctx context.Context, index string, key interface{}) ([]interface{}, error)
 }
 
@@ -36,7 +46,7 @@ func NewIndexedStore(name string, keyEncoder, valEncoder encoding.Encoder, index
 
 	idxs := make(map[string]Index)
 	for _, idx := range indexes {
-		idxs[idx.Name()] = idx
+		idxs[idx.String()] = idx
 	}
 
 	return &indexedStore{
@@ -51,8 +61,32 @@ func (i *indexedStore) Set(ctx context.Context, key, val interface{}, expiry tim
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	for _, index := range i.indexes {
-		if err := index.Write(key, val); err != nil {
+		// get the previous value for the indexed key
+		valPrv, err := i.Get(ctx, key)
+		if err != nil {
 			return err
+		}
+
+		// if previous exists and different from current value
+		// eg: val.name=foo -> val.name=bar then find index for foo and delete
+		if valPrv != nil {
+			hash := index.Hash(key, valPrv)
+			// check if value already indexed
+			indexed, err := index.ValueIndexed(hash, key)
+			if err != nil {
+				return err
+			}
+
+			// if already indexed remove from previous index
+			if indexed {
+				if err := index.Delete(hash, key); err != nil {
+					return err
+				}
+			}
+		}
+
+		if err := index.Write(key, val); err != nil {
+			return errors.WithPrevious(err, `index write failed`)
 		}
 	}
 	return i.Store.Set(ctx, key, val, expiry)
@@ -85,6 +119,16 @@ func (i *indexedStore) GetIndex(_ context.Context, name string) (Index, error) {
 	return index, nil
 }
 
+func (i *indexedStore) Indexes() []Index {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+	var idxs []Index
+	for _, idx := range i.indexes {
+		idxs = append(idxs, idx)
+	}
+	return idxs
+}
+
 func (i *indexedStore) GetIndexedRecords(ctx context.Context, index string, key interface{}) ([]interface{}, error) {
 	i.mu.Lock()
 	idx, ok := i.indexes[index]
@@ -96,7 +140,7 @@ func (i *indexedStore) GetIndexedRecords(ctx context.Context, index string, key 
 	var records []interface{}
 	indexes, err := idx.Read(key)
 	if err != nil {
-		if errors.Is(err, UnknownIndex) {
+		if nativeErrors.Is(err, UnknownIndex) {
 			return records, nil
 		}
 		return nil, err

@@ -3,6 +3,7 @@ package store
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"sync"
 )
 
@@ -26,7 +27,7 @@ func NewStringHashIndex(name string, mapper KeyMapper) Index {
 	}
 }
 
-func (s *stringHashIndex) Name() string {
+func (s *stringHashIndex) String() string {
 	return s.name
 }
 
@@ -39,6 +40,39 @@ func (s *stringHashIndex) Write(key, value interface{}) error {
 		s.indexes[hashKey] = make(map[interface{}]bool)
 	}
 	s.indexes[hashKey][key] = true
+
+	return nil
+}
+
+func (s *stringHashIndex) ValueIndexed(index, value interface{}) (bool, error) {
+	hStr, ok := index.(string)
+	if !ok {
+		return false, errors.New(fmt.Sprintf(`unsupported hash type expected [string] given [%s]`, reflect.TypeOf(index)))
+	}
+	_, ok = s.indexes[hStr]
+	if !ok {
+		return false, nil
+	}
+
+	_, ok = s.indexes[hStr][value]
+	return ok, nil
+}
+
+func (s *stringHashIndex) Hash(key, val interface{}) (hash interface{}) {
+	return s.mapper(key, val)
+}
+
+func (s *stringHashIndex) WriteHash(hash, key interface{}) error {
+	hStr, ok := hash.(string)
+	if !ok {
+		return errors.New(fmt.Sprintf(`unsupported hash type expected [string] given [%s]`, reflect.TypeOf(hash)))
+	}
+	_, ok = s.indexes[hStr]
+	if !ok {
+		s.indexes[hStr] = make(map[interface{}]bool)
+	}
+	s.indexes[hStr][key] = true
+
 	return nil
 }
 
@@ -52,6 +86,32 @@ func (s *stringHashIndex) Delete(key, value interface{}) error {
 
 	delete(s.indexes[hashKey], key)
 	return nil
+}
+
+func (s *stringHashIndex) Keys() []interface{} {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var keys []interface{}
+
+	for key := range s.indexes {
+		keys = append(keys, key)
+	}
+
+	return keys
+}
+
+func (s *stringHashIndex) Values() map[interface{}][]interface{} {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	values := make(map[interface{}][]interface{})
+
+	for idx, keys := range s.indexes {
+		for key := range keys {
+			values[idx] = append(values[idx], key)
+		}
+	}
+
+	return values
 }
 
 func (s *stringHashIndex) Read(key interface{}) ([]interface{}, error) {

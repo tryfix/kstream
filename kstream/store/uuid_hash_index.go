@@ -3,6 +3,8 @@ package store
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/tryfix/errors"
+	"reflect"
 	"sync"
 )
 
@@ -22,7 +24,7 @@ func NewUuidHashIndex(name string, mapper func(key, val interface{}) (idx uuid.U
 	}
 }
 
-func (s *uuidHashIndex) Name() string {
+func (s *uuidHashIndex) String() string {
 	return s.name
 }
 
@@ -38,6 +40,38 @@ func (s *uuidHashIndex) Write(key, value interface{}) error {
 	return nil
 }
 
+func (s *uuidHashIndex) ValueIndexed(index, value interface{}) (bool, error) {
+	hStr, ok := index.(uuid.UUID)
+	if !ok {
+		return false, errors.New(fmt.Sprintf(`unsupported hash type expected [string] given [%s]`, reflect.TypeOf(index)))
+	}
+	_, ok = s.indexes[hStr]
+	if !ok {
+		return false, nil
+	}
+
+	_, ok = s.indexes[hStr][value]
+	return ok, nil
+}
+
+func (s *uuidHashIndex) Hash(key, val interface{}) (hash interface{}) {
+	return s.mapper(key, val)
+}
+
+func (s *uuidHashIndex) WriteHash(hash, key interface{}) error {
+	hStr, ok := hash.(uuid.UUID)
+	if !ok {
+		return errors.New(fmt.Sprintf(`unsupported hash type expected [string] given [%s]`, reflect.TypeOf(hash)))
+	}
+	_, ok = s.indexes[hStr]
+	if !ok {
+		s.indexes[hStr] = make(map[interface{}]bool)
+	}
+	s.indexes[hStr][key] = true
+
+	return nil
+}
+
 func (s *uuidHashIndex) Delete(key, value interface{}) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -48,6 +82,32 @@ func (s *uuidHashIndex) Delete(key, value interface{}) error {
 
 	delete(s.indexes[hashKey], key)
 	return nil
+}
+
+func (s *uuidHashIndex) Keys() []interface{} {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var keys []interface{}
+
+	for key := range s.indexes {
+		keys = append(keys, key)
+	}
+
+	return keys
+}
+
+func (s *uuidHashIndex) Values() map[interface{}][]interface{} {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	values := make(map[interface{}][]interface{})
+
+	for idx, keys := range s.indexes {
+		for key := range keys {
+			values[idx] = append(values[idx], key)
+		}
+	}
+
+	return values
 }
 
 func (s *uuidHashIndex) Read(key interface{}) ([]interface{}, error) {

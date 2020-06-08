@@ -8,6 +8,8 @@
 package kstream
 
 import (
+	"context"
+	"github.com/tryfix/errors"
 	"github.com/tryfix/kstream/data"
 	"github.com/tryfix/kstream/kstream/encoding"
 	"github.com/tryfix/kstream/kstream/internal/join"
@@ -27,13 +29,33 @@ const GlobalTableOffsetDefault GlobalTableOffset = 0
 const GlobalTableOffsetLatest GlobalTableOffset = -1
 
 // globalTableStoreWriter overrides the persistence logic for GlobalTables.
-var globalTableStoreWriter = func(r *data.Record, store store.Store) error {
+var globalTableStoreWriter = func(r *data.Record, st store.Store) error {
+	if _, ok := st.(store.IndexedStore); ok {
+		return globalTableIndexedStoreWriter(r, st)
+	}
 	// tombstone handling
 	if r.Value == nil {
-		return store.Backend().Delete(r.Key)
+		return st.Backend().Delete(r.Key)
 	}
 
-	return store.Backend().Set(r.Key, r.Value, 0)
+	return st.Backend().Set(r.Key, r.Value, 0)
+}
+
+var globalTableIndexedStoreWriter = func(r *data.Record, store store.Store) error {
+	k, err := store.KeyEncoder().Decode(r.Key)
+	if err != nil {
+		return errors.WithPrevious(err, `indexable-store-writer key decode error`)
+	}
+	if r.Value == nil {
+		return store.Delete(context.Background(), k)
+	}
+
+	v, err := store.ValEncoder().Decode(r.Value)
+	if err != nil {
+		return errors.WithPrevious(err, `indexable-store-writer value decode error`)
+	}
+
+	return store.Set(context.Background(), k, v, 0)
 }
 
 type globalTableOptions struct {

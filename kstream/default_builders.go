@@ -18,6 +18,7 @@ type DefaultBuilders struct {
 	Consumer          consumer.Builder
 	PartitionConsumer consumer.PartitionConsumerBuilder
 	Store             store.Builder
+	IndexedStore      store.IndexedStoreBuilder
 	Backend           backend.Builder
 	StateStore        store.StateStoreBuilder
 	OffsetManager     offsets.Manager
@@ -45,6 +46,14 @@ func (dbs *DefaultBuilders) build(options ...BuilderOption) {
 
 	dbs.Store = func(name string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...store.Options) (store.Store, error) {
 		return store.NewStore(name, keyEncoder(), valEncoder(), append(
+			options,
+			store.WithBackendBuilder(dbs.configs.Store.BackendBuilder),
+			store.WithLogger(dbs.configs.Logger),
+		)...)
+	}
+
+	dbs.IndexedStore = func(name string, keyEncoder encoding.Builder, valEncoder encoding.Builder, indexes []store.Index, options ...store.Options) (store.IndexedStore, error) {
+		return store.NewIndexedStore(name, keyEncoder(), valEncoder(), indexes, append(
 			options,
 			store.WithBackendBuilder(dbs.configs.Store.BackendBuilder),
 			store.WithLogger(dbs.configs.Logger),

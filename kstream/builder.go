@@ -139,12 +139,13 @@ func NewStreamBuilder(config *StreamBuilderConfig, options ...BuilderOption) *St
 	b.config.Consumer.MetricsReporter = config.MetricsReporter
 
 	b.storeRegistry = store.NewRegistry(&store.RegistryConfig{
-		Host:              config.Store.Http.Host,
-		HttpEnabled:       config.Store.Http.Enabled,
-		StoreBuilder:      b.defaultBuilders.Store,
-		StateStoreBuilder: b.defaultBuilders.StateStore,
-		Logger:            config.Logger,
-		MetricsReporter:   b.metricsReporter,
+		Host:                config.Store.Http.Host,
+		HttpEnabled:         config.Store.Http.Enabled,
+		StoreBuilder:        b.defaultBuilders.Store,
+		StateStoreBuilder:   b.defaultBuilders.StateStore,
+		IndexedStoreBuilder: b.defaultBuilders.IndexedStore,
+		Logger:              config.Logger,
+		MetricsReporter:     b.metricsReporter,
 	})
 
 	return b
@@ -217,7 +218,6 @@ func (b *StreamBuilder) Stream(topic string, keyEncoder encoding.Builder, valEnc
 }
 
 func (b *StreamBuilder) GlobalTable(topic string, keyEncoder encoding.Builder, valEncoder encoding.Builder, store string, options ...GlobalTableOption) GlobalTable {
-
 	//apply options
 	opts := new(globalTableOptions)
 	opts.initialOffset = GlobalTableOffsetDefault
@@ -245,7 +245,6 @@ func (b *StreamBuilder) GlobalTable(topic string, keyEncoder encoding.Builder, v
 }
 
 func (b *StreamBuilder) buildKStream(kStream *kStream) error {
-
 	streams, err := kStream.Build()
 	if err != nil {
 		return err

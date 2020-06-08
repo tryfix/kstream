@@ -1,6 +1,7 @@
 package encoders
 
 import (
+	"github.com/google/uuid"
 	"github.com/tryfix/errors"
 	"reflect"
 	"strconv"
@@ -19,10 +20,7 @@ func (Int64Encoder) Encode(v interface{}) ([]byte, error) {
 		i = int64(j)
 	}
 
-	/*byt := make([]byte, 4)
-	binary.BigEndian.PutUint32(byt, uint32(i))*/
-
-	return []byte(strconv.FormatInt(i,10)), nil
+	return []byte(strconv.FormatInt(i, 10)), nil
 }
 
 func (Int64Encoder) Decode(data []byte) (interface{}, error) {
@@ -32,5 +30,25 @@ func (Int64Encoder) Decode(data []byte) (interface{}, error) {
 	}
 
 	return i, nil
-	//return int(binary.BigEndian.Uint32(data)), nil
+}
+
+type UuidEncoder struct{}
+
+func (UuidEncoder) Encode(v interface{}) ([]byte, error) {
+	i, ok := v.(uuid.UUID)
+	if !ok {
+		return nil, errors.Errorf(`invalid type [%v] expected int64`, reflect.TypeOf(v))
+	}
+
+	return i.MarshalText()
+}
+
+func (UuidEncoder) Decode(data []byte) (interface{}, error) {
+	uid := uuid.UUID{}
+	err := uid.UnmarshalText(data)
+	if err != nil {
+		return nil, errors.WithPrevious(err, `cannot decode data`)
+	}
+
+	return uid, nil
 }

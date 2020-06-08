@@ -12,6 +12,7 @@ import (
 	"github.com/tryfix/kstream/examples/example_1/stream"
 	"github.com/tryfix/kstream/kstream"
 	"github.com/tryfix/kstream/kstream/offsets"
+	"github.com/tryfix/kstream/kstream/store"
 	"github.com/tryfix/kstream/kstream/worker_pool"
 	"github.com/tryfix/kstream/producer"
 	"github.com/tryfix/log"
@@ -20,6 +21,14 @@ import (
 	"os/signal"
 	"time"
 )
+
+var customerIds = []uuid.UUID{}
+
+func init() {
+	for i := 1; i <= 100; i++ {
+		customerIds = append(customerIds, uuid.New())
+	}
+}
 
 func setupMockBuilders() *kstream.StreamBuilder {
 	config := kstream.NewStreamBuilderConfig()
@@ -82,7 +91,7 @@ func setupMockBuilders() *kstream.StreamBuilder {
 	config.WorkerPool.WorkerBufferSize = 10
 
 	config.Logger = log.NewLog(
-		log.WithLevel(`INFO`),
+		log.WithLevel(`ERROR`),
 		log.WithColors(true),
 	).Log()
 
@@ -107,15 +116,19 @@ func main() {
 	//customerProfileMockStore := store.NewMockStore(`customer_profile_store`, encoders.KeyEncoder(), encoders.CustomerProfileUpdatedEncoder(), mockBackend)
 	//builder.StoreRegistry().Register(customerProfileMockStore)
 
-	builder.StoreRegistry().New(
+	builder.StoreRegistry().NewIndexedStore(
 		`account_detail_store`,
 		encoders.KeyEncoder,
-		encoders.AccountDetailsUpdatedEncoder)
+		encoders.AccountDetailsUpdatedEncoder, []store.Index{store.NewUuidHashIndex(`accout_customer_idx`, func(key, val interface{}) (idx uuid.UUID) {
+			return val.(events.AccountDetailsUpdated).Body.CustomerID
+		})})
 
-	builder.StoreRegistry().New(
+	builder.StoreRegistry().NewIndexedStore(
 		`customer_profile_store`,
-		encoders.KeyEncoder,
-		encoders.CustomerProfileUpdatedEncoder)
+		encoders.UuidKeyEncoder,
+		encoders.CustomerProfileUpdatedEncoder, []store.Index{store.NewStringHashIndex(`customer_profile_email_idx`, func(key, val interface{}) (idx string) {
+			return val.(events.CustomerProfileUpdated).Body.ContactDetails.Email
+		})})
 
 	err := builder.Build(stream.InitStreams(builder)...)
 	if err != nil {
@@ -236,7 +249,7 @@ func produceAccountDetails(streamProducer producer.Producer) {
 		}
 		event.Body.AccountNo = key
 		event.Body.AccountType = `Saving`
-		event.Body.CustomerID = rand.Int63n(100)
+		event.Body.CustomerID = customerIds[rand.Intn(99)+1]
 		event.Body.Branch = `Main Branch, City A`
 		event.Body.BranchCode = 1
 		event.Body.UpdatedAt = time.Now().Unix()
@@ -266,15 +279,13 @@ func produceAccountDetails(streamProducer producer.Producer) {
 }
 
 func produceCustomerProfile(streamProducer producer.Producer) {
-
-	for i := 1; i <= 100; i++ {
-		key := int64(i)
+	for _, id := range customerIds {
 		event := events.CustomerProfileUpdated{
-			ID:        uuid.New().String(),
+			ID:        id,
 			Type:      `customer_profile_updated`,
 			Timestamp: time.Now().UnixNano() / 1e6,
 		}
-		event.Body.CustomerID = key
+		event.Body.CustomerID = id
 		event.Body.CustomerName = `Rob Pike`
 		event.Body.NIC = `222222222v`
 		event.Body.ContactDetails.Email = `example@gmail.com`
@@ -283,7 +294,7 @@ func produceCustomerProfile(streamProducer producer.Producer) {
 		event.Body.DateOfBirth = `16th-Nov-2019`
 		event.Body.UpdatedAt = time.Now().Unix()
 
-		encodedKey, err := encoders.KeyEncoder().Encode(key)
+		encodedKey, err := encoders.UuidKeyEncoder().Encode(id)
 		if err != nil {
 			log.Error(err, event)
 		}
