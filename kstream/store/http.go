@@ -198,7 +198,11 @@ func MakeEndpoints(host string, registry Registry, logger log.Logger) {
 		vars := mux.Vars(request)
 		storeName, ok := vars[`store`]
 		if !ok {
-			logger.Error(`unknown route parameter`)
+			res := h.encodeError(errors.New(`unknown route parameter`))
+			if _, err := writer.Write(res); err != nil {
+				logger.Error(err)
+				return
+			}
 			return
 		}
 
@@ -208,6 +212,7 @@ func MakeEndpoints(host string, registry Registry, logger log.Logger) {
 				logger.Error(err)
 				return
 			}
+			return
 		}
 
 		store, err := registry.Store(storeName)
@@ -227,6 +232,7 @@ func MakeEndpoints(host string, registry Registry, logger log.Logger) {
 				logger.Error(err)
 				return
 			}
+			return
 		}
 
 		keys := indexdStore.Indexes()

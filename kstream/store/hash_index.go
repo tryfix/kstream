@@ -81,7 +81,7 @@ func (s *stringHashIndex) Delete(key, value interface{}) error {
 	defer s.mu.Unlock()
 	hashKey := s.mapper(key, value)
 	if _, ok := s.indexes[hashKey]; !ok {
-		return fmt.Errorf(`hashKey %s does not exist for %s`, hashKey, s.name)
+		return fmt.Errorf(`hashKey [%s] does not exist for [%s]`, hashKey, s.name)
 	}
 
 	delete(s.indexes[hashKey], key)

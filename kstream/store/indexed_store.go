@@ -4,8 +4,10 @@ import (
 	"context"
 	nativeErrors "errors"
 	"fmt"
+
 	"github.com/tryfix/errors"
 	"github.com/tryfix/kstream/kstream/encoding"
+
 	//goEncoding "encoding"
 	"sync"
 	"time"
@@ -79,7 +81,7 @@ func (i *indexedStore) Set(ctx context.Context, key, val interface{}, expiry tim
 
 			// if already indexed remove from previous index
 			if indexed {
-				if err := index.Delete(hash, key); err != nil {
+				if err := index.Delete(key, valPrv); err != nil {
 					return err
 				}
 			}
