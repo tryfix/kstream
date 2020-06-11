@@ -74,7 +74,7 @@ func NewMemoryBackend(logger log.Logger, reporter metrics.Reporter) backend.Back
 	m.metrics.storageSize = reporter.Gauge(metrics.MetricConf{Path: `backend_storage_size`, Labels: labels})
 	m.metrics.deleteLatency = reporter.Observer(metrics.MetricConf{Path: `backend_delete_latency_microseconds`, Labels: labels})
 
-	go m.runCleaner()
+	//go m.runCleaner()
 	return m
 }
 
