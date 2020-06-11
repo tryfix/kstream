@@ -86,7 +86,7 @@ func NewMemoryBackend(config *config) backend.Backend {
 }
 
 func (m *memory) runCleaner() {
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(m.expiredRecordCleanupInterval)
 	for range ticker.C {
 		records := m.snapshot()
 		for _, record := range records {
