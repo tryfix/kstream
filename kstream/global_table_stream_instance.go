@@ -207,7 +207,7 @@ func (t *tableInstance) process(r *data.Record, retry int, err error) error {
 func (t *tableInstance) processRecord(r *data.Record) error {
 	// log compaction (tombstone)
 	if err := t.storeWriter(r, t.store); err != nil {
-		return err
+		return errors.WithPrevious(err, `record process failed`)
 	}
 
 	// if backend is non persistent no need to store the offset locally

@@ -16,7 +16,10 @@ import (
 )
 
 func BenchmarkMemory_Set(b *testing.B) {
-	backend := NewMemoryBackend(log.Constructor.Log(), metrics.NoopReporter())
+	conf := NewConfig()
+	conf.Logger = log.NewNoopLogger()
+	conf.MetricsReporter = metrics.NoopReporter()
+	backend := NewMemoryBackend(conf)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -30,7 +33,10 @@ func BenchmarkMemory_Set(b *testing.B) {
 }
 
 func BenchmarkMemory_Get(b *testing.B) {
-	backend := NewMemoryBackend(log.Constructor.Log(), metrics.NoopReporter())
+	conf := NewConfig()
+	conf.Logger = log.NewNoopLogger()
+	conf.MetricsReporter = metrics.NoopReporter()
+	backend := NewMemoryBackend(conf)
 	numOfRecs := 1000000
 	for i := 1; i <= numOfRecs; i++ {
 		if err := backend.Set([]byte(fmt.Sprint(i)), []byte(`100`), 0); err != nil {
@@ -53,7 +59,10 @@ func BenchmarkMemory_Get(b *testing.B) {
 }
 
 func BenchmarkMemory_GetSet(b *testing.B) {
-	backend := NewMemoryBackend(log.Constructor.Log(), metrics.NoopReporter())
+	conf := NewConfig()
+	conf.Logger = log.NewNoopLogger()
+	conf.MetricsReporter = metrics.NoopReporter()
+	backend := NewMemoryBackend(conf)
 
 	for i := 1; i <= 99999; i++ {
 		if err := backend.Set([]byte(fmt.Sprint(rand.Intn(1000)+1)), []byte(`100`), 0); err != nil {
@@ -79,7 +88,10 @@ func BenchmarkMemory_GetSet(b *testing.B) {
 }
 
 func BenchmarkMemory_Iterator(b *testing.B) {
-	backend := NewMemoryBackend(log.Constructor.Log(), metrics.NoopReporter())
+	conf := NewConfig()
+	conf.Logger = log.NewNoopLogger()
+	conf.MetricsReporter = metrics.NoopReporter()
+	backend := NewMemoryBackend(conf)
 
 	for i := 1; i <= 999999; i++ {
 		if err := backend.Set([]byte(fmt.Sprint(rand.Intn(999999)+1)), []byte(`100`), 0); err != nil {

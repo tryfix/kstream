@@ -46,13 +46,13 @@ func TestMockProducer_ProduceBatch(t *testing.T) {
 	producer := NewMockProducer(topics)
 
 	msg1 := &data.Record{
-		Key:       []byte(string(`100`)),
-		Value:     []byte(string(`100`)),
+		Key:       []byte(`100`),
+		Value:     []byte(`100`),
 		Partition: 1,
 	}
 
 	msg2 := *msg1
-	msg2.Key = []byte(string(`100`))
+	msg2.Key = []byte(`100`)
 
 	err := producer.ProduceBatch(context.Background(), []*data.Record{msg1, &msg2})
 	if err != nil {

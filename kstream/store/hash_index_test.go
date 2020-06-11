@@ -69,7 +69,7 @@ func TestHashIndex_Name(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.idx.Name(); got != tt.want {
+			if got := tt.idx.String(); got != tt.want {
 				t.Errorf("Name() = %v, want %v", got, tt.want)
 			}
 		})

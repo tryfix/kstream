@@ -11,40 +11,48 @@ import (
 
 type Registry interface {
 	Register(store Store)
-	New(name string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...Options) Store
+	New(name string, keyEncoder, valEncoder encoding.Builder, options ...Options) Store
+	NewIndexedStore(name string, keyEncoder, valEncoder encoding.Builder, indexes []Index, options ...Options) IndexedStore
 	Store(name string) (Store, error)
-	List() []string
+	Index(name string) (Index, error)
+	Stores() []Store
+	Indexes() []Index
 }
 
 type registry struct {
-	Stores            map[string]Store
-	StateStores       map[string]StateStore
-	mu                *sync.Mutex
-	logger            log.Logger
-	applicationId     string
-	storeBuilder      Builder
-	stateStoreBuilder StateStoreBuilder
+	stores              map[string]Store
+	stateStores         map[string]StateStore
+	indexes             map[string]Index
+	mu                  *sync.Mutex
+	logger              log.Logger
+	applicationId       string
+	storeBuilder        Builder
+	indexedStoreBuilder IndexedStoreBuilder
+	stateStoreBuilder   StateStoreBuilder
 }
 
 type RegistryConfig struct {
-	Host              string
-	HttpEnabled       bool
-	applicationId     string
-	StoreBuilder      Builder
-	StateStoreBuilder StateStoreBuilder
-	Logger            log.Logger
-	MetricsReporter   metrics.Reporter
+	Host                string
+	HttpEnabled         bool
+	applicationId       string
+	StoreBuilder        Builder
+	StateStoreBuilder   StateStoreBuilder
+	IndexedStoreBuilder IndexedStoreBuilder
+	Logger              log.Logger
+	MetricsReporter     metrics.Reporter
 }
 
 func NewRegistry(config *RegistryConfig) Registry {
 	reg := &registry{
-		Stores:            make(map[string]Store),
-		StateStores:       make(map[string]StateStore),
-		mu:                &sync.Mutex{},
-		logger:            config.Logger.NewLog(log.Prefixed(`store-registry`)),
-		applicationId:     config.applicationId,
-		stateStoreBuilder: config.StateStoreBuilder,
-		storeBuilder:      config.StoreBuilder,
+		stores:              make(map[string]Store),
+		stateStores:         make(map[string]StateStore),
+		indexes:             make(map[string]Index),
+		mu:                  &sync.Mutex{},
+		logger:              config.Logger.NewLog(log.Prefixed(`store-registry`)),
+		applicationId:       config.applicationId,
+		stateStoreBuilder:   config.StateStoreBuilder,
+		indexedStoreBuilder: config.IndexedStoreBuilder,
+		storeBuilder:        config.StoreBuilder,
 	}
 
 	if config.HttpEnabled {
@@ -56,15 +64,22 @@ func NewRegistry(config *RegistryConfig) Registry {
 
 func (r *registry) Register(store Store) {
 	name := store.Name()
-	if _, ok := r.Stores[name]; ok {
+	if _, ok := r.stores[name]; ok {
 		r.logger.Fatal(fmt.Sprintf(`store [%s] already exist`, name))
 	}
 
-	r.Stores[name] = store
+	// if store is an IndexedStore store register Indexes
+	if stor, ok := store.(IndexedStore); ok {
+		for _, idx := range stor.Indexes() {
+			r.indexes[idx.String()] = idx
+		}
+	}
+
+	r.stores[name] = store
 }
 
 func (r *registry) New(name string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...Options) Store {
-	if _, ok := r.Stores[name]; ok {
+	if _, ok := r.stores[name]; ok {
 		r.logger.Fatal(fmt.Sprintf(`store [%s] already exist`, name))
 	}
 
@@ -73,16 +88,35 @@ func (r *registry) New(name string, keyEncoder encoding.Builder, valEncoder enco
 		r.logger.Fatal(err)
 	}
 
-	r.Stores[name] = s
+	r.stores[name] = s
 
-	return r.Stores[name]
+	return r.stores[name]
+}
+
+func (r *registry) NewIndexedStore(name string, keyEncoder, valEncoder encoding.Builder, indexes []Index, options ...Options) IndexedStore {
+	if _, ok := r.stores[name]; ok {
+		r.logger.Fatal(fmt.Sprintf(`store [%s] already exist`, name))
+	}
+
+	s, err := r.indexedStoreBuilder(name, keyEncoder, valEncoder, indexes, options...)
+	if err != nil {
+		r.logger.Fatal(err)
+	}
+
+	r.stores[name] = s
+
+	for _, idx := range s.Indexes() {
+		r.indexes[idx.String()] = idx
+	}
+
+	return s
 }
 
 func (r *registry) Store(name string) (Store, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	store, ok := r.Stores[name]
+	store, ok := r.stores[name]
 	if !ok {
 		return nil, errors.New(fmt.Sprintf(`unknown store [%s]`, name))
 	}
@@ -90,11 +124,33 @@ func (r *registry) Store(name string) (Store, error) {
 	return store, nil
 }
 
-func (r *registry) List() []string {
-	var list []string
+func (r *registry) Index(name string) (Index, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
-	for name := range r.Stores {
-		list = append(list, name)
+	idx, ok := r.indexes[name]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf(`unknown index [%s]`, name))
+	}
+
+	return idx, nil
+}
+
+func (r *registry) Stores() []Store {
+	var list []Store
+
+	for _, stor := range r.stores {
+		list = append(list, stor)
+	}
+
+	return list
+}
+
+func (r *registry) Indexes() []Index {
+	var list []Index
+
+	for _, idx := range r.indexes {
+		list = append(list, idx)
 	}
 
 	return list

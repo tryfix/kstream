@@ -13,17 +13,18 @@ import (
 	"time"
 )
 
-type Builder func(name string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...Options) (Store, error)
-type StateStoreBuilder func(name string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...Options) StateStore
+type Builder func(name string, keyEncoder, valEncoder encoding.Builder, options ...Options) (Store, error)
+type IndexedStoreBuilder func(name string, keyEncoder, valEncoder encoding.Builder, indexes []Index, options ...Options) (IndexedStore, error)
+type StateStoreBuilder func(name string, keyEncoder, valEncoder encoding.Builder, options ...Options) StateStore
 
 type Store interface {
 	Name() string
 	Backend() backend.Backend
 	KeyEncoder() encoding.Encoder
 	ValEncoder() encoding.Encoder
-	Set(ctx context.Context, key interface{}, value interface{}, expiry time.Duration) error
+	Set(ctx context.Context, key, value interface{}, expiry time.Duration) error
 	Get(ctx context.Context, key interface{}) (value interface{}, err error)
-	GetRange(ctx context.Context, fromKey interface{}, toKey interface{}) (map[interface{}]interface{}, error)
+	GetRange(ctx context.Context, fromKey, toKey interface{}) (map[interface{}]interface{}, error)
 	GetAll(ctx context.Context) (Iterator, error)
 	Delete(ctx context.Context, key interface{}) error
 	String() string
@@ -31,7 +32,7 @@ type Store interface {
 
 type StateStore interface {
 	Name() string
-	Set(key interface{}, value interface{}) error
+	Set(key, value interface{}) error
 	Get(key interface{}) (value interface{}, err error)
 	GetAll() ([]*data.Record, error)
 }

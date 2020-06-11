@@ -40,7 +40,10 @@ func TestGlobalTableStream_StartStreams(t *testing.T) {
 				ReplicationFactor: 1,
 			}
 
-			stor, _ := store.NewStore(name, encoding.StringEncoder{}, encoding.StringEncoder{}, store.WithBackend(memory.NewMemoryBackend(log.NewNoopLogger(), metrics.NoopReporter())))
+			conf := memory.NewConfig()
+			conf.Logger = log.NewNoopLogger()
+			conf.MetricsReporter = metrics.NoopReporter()
+			stor, _ := store.NewStore(name, encoding.StringEncoder{}, encoding.StringEncoder{}, store.WithBackend(memory.NewMemoryBackend(conf)))
 			stores[name] = stor
 			tables[name] = &globalKTable{store: stor, storeName: stor.Name(), options: opts}
 		}

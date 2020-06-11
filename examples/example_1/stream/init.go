@@ -13,17 +13,14 @@ import (
 	"os/signal"
 )
 
-func Init() {
-
+func init() {
 	log.StdLogger = log.Constructor.Log(
 		log.WithLevel(`TRACE`),
 		log.WithColors(true),
 	)
+}
 
-	Logger := log.NewLog(
-		log.WithLevel(`TRACE`),
-		log.WithColors(true),
-	).Log()
+func Init() {
 
 	builderConfig := kstream.NewStreamBuilderConfig()
 	builderConfig.BootstrapServers = []string{`localhost:9092`}
@@ -44,7 +41,7 @@ func Init() {
 	builderConfig.WorkerPool.WorkerBufferSize = 10
 
 	builderConfig.MetricsReporter = metrics.PrometheusReporter(metrics.ReporterConf{`streams`, `k_stream_test`, nil})
-	builderConfig.Logger = Logger
+	builderConfig.Logger = log.StdLogger
 
 	//builderConfig.Producer.Pool.NumOfWorkers = 1
 

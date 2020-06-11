@@ -7,6 +7,8 @@ import (
 
 var KeyEncoder = func() encoding.Encoder { return Int64Encoder{} }
 
+var UuidKeyEncoder = func() encoding.Encoder { return UuidEncoder{} }
+
 var TransactionReceivedEncoder = func() encoding.Encoder { return TransactionEncoder{} }
 
 var AccountCreditedEncoder = func() encoding.Encoder { return events.AccountCredited{} }
