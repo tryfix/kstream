@@ -16,7 +16,11 @@ import (
 )
 
 func TestMemory_Set_Expiry(t *testing.T) {
-	backend := NewMemoryBackend(log.Constructor.Log(), metrics.NoopReporter())
+	conf := NewConfig()
+	conf.ExpiredRecordCleanupInterval = 1 * time.Millisecond
+	conf.Logger = log.NewNoopLogger()
+	conf.MetricsReporter = metrics.NoopReporter()
+	backend := NewMemoryBackend(conf)
 	if err := backend.Set([]byte(`100`), []byte(`100`), 10*time.Millisecond); err != nil {
 		log.Fatal(err)
 	}
@@ -34,7 +38,10 @@ func TestMemory_Set_Expiry(t *testing.T) {
 }
 
 func TestMemory_Get(t *testing.T) {
-	backend := NewMemoryBackend(log.Constructor.Log(), metrics.NoopReporter())
+	conf := NewConfig()
+	conf.Logger = log.NewNoopLogger()
+	conf.MetricsReporter = metrics.NoopReporter()
+	backend := NewMemoryBackend(conf)
 
 	for i := 1; i <= 1000; i++ {
 		if err := backend.Set([]byte(fmt.Sprint(i)), []byte(`100`), 0); err != nil {
@@ -56,7 +63,10 @@ func TestMemory_Get(t *testing.T) {
 }
 
 func TestMemory_Delete(t *testing.T) {
-	backend := NewMemoryBackend(log.Constructor.Log(), metrics.NoopReporter())
+	conf := NewConfig()
+	conf.Logger = log.NewNoopLogger()
+	conf.MetricsReporter = metrics.NoopReporter()
+	backend := NewMemoryBackend(conf)
 
 	if err := backend.Set([]byte(`100`), []byte(`100`), 0); err != nil {
 		t.Fatal(err)

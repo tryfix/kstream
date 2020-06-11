@@ -23,8 +23,9 @@ type memoryRecord struct {
 }
 
 type config struct {
-	MetricsReporter metrics.Reporter
-	Logger          log.Logger
+	ExpiredRecordCleanupInterval time.Duration
+	MetricsReporter              metrics.Reporter
+	Logger                       log.Logger
 }
 
 func NewConfig() *config {
@@ -35,6 +36,10 @@ func NewConfig() *config {
 }
 
 func (c *config) parse() {
+	if c.ExpiredRecordCleanupInterval == time.Duration(0) {
+		c.ExpiredRecordCleanupInterval = time.Second
+	}
+
 	if c.Logger == nil {
 		c.Logger = log.NewNoopLogger()
 	}
@@ -45,9 +50,10 @@ func (c *config) parse() {
 }
 
 type memory struct {
-	records *sync.Map
-	logger  log.Logger
-	metrics struct {
+	expiredRecordCleanupInterval time.Duration
+	records                      *sync.Map
+	logger                       log.Logger
+	metrics                      struct {
 		readLatency   metrics.Observer
 		updateLatency metrics.Observer
 		deleteLatency metrics.Observer
@@ -57,29 +63,30 @@ type memory struct {
 
 func Builder(config *config) backend.Builder {
 	return func(name string) (backend backend.Backend, err error) {
-		return NewMemoryBackend(config.Logger, config.MetricsReporter), nil
+		return NewMemoryBackend(config), nil
 	}
 }
 
-func NewMemoryBackend(logger log.Logger, reporter metrics.Reporter) backend.Backend {
+func NewMemoryBackend(config *config) backend.Backend {
 
 	m := &memory{
-		logger:  logger,
-		records: new(sync.Map),
+		expiredRecordCleanupInterval: config.ExpiredRecordCleanupInterval,
+		logger:                       config.Logger,
+		records:                      new(sync.Map),
 	}
 
 	labels := []string{`name`, `type`}
-	m.metrics.readLatency = reporter.Observer(metrics.MetricConf{Path: `backend_read_latency_microseconds`, Labels: labels})
-	m.metrics.updateLatency = reporter.Observer(metrics.MetricConf{Path: `backend_update_latency_microseconds`, Labels: labels})
-	m.metrics.storageSize = reporter.Gauge(metrics.MetricConf{Path: `backend_storage_size`, Labels: labels})
-	m.metrics.deleteLatency = reporter.Observer(metrics.MetricConf{Path: `backend_delete_latency_microseconds`, Labels: labels})
+	m.metrics.readLatency = config.MetricsReporter.Observer(metrics.MetricConf{Path: `backend_read_latency_microseconds`, Labels: labels})
+	m.metrics.updateLatency = config.MetricsReporter.Observer(metrics.MetricConf{Path: `backend_update_latency_microseconds`, Labels: labels})
+	m.metrics.storageSize = config.MetricsReporter.Gauge(metrics.MetricConf{Path: `backend_storage_size`, Labels: labels})
+	m.metrics.deleteLatency = config.MetricsReporter.Observer(metrics.MetricConf{Path: `backend_delete_latency_microseconds`, Labels: labels})
 
-	//go m.runCleaner()
+	go m.runCleaner()
 	return m
 }
 
 func (m *memory) runCleaner() {
-	ticker := time.NewTicker(1 * time.Millisecond)
+	ticker := time.NewTicker(1 * time.Second)
 	for range ticker.C {
 		records := m.snapshot()
 		for _, record := range records {

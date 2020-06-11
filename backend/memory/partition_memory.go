@@ -25,7 +25,10 @@ func NewPartitionMemoryBackend(partitions int, logger log.Logger, reporter metri
 	}
 
 	for i := 0; i < partitions; i++ {
-		backend := NewMemoryBackend(logger, reporter)
+		conf := NewConfig()
+		conf.Logger = logger
+		conf.MetricsReporter = reporter
+		backend := NewMemoryBackend(conf)
 		partitionedBackend.partitions[i] = backend
 	}
 

@@ -47,12 +47,15 @@ func BenchmarkIndexedStore_GetIndexedRecords(b *testing.B) {
 		return strings.Split(val.(string), `:`)[0]
 	})
 
+	conf := memory.NewConfig()
+	conf.Logger = log.NewNoopLogger()
+	conf.MetricsReporter = metrics.NoopReporter()
 	st, err := NewIndexedStore(
 		`foo`,
 		encoding.StringEncoder{},
 		encoding.StringEncoder{},
 		[]Index{index},
-		WithBackend(memory.NewMemoryBackend(log.NewNoopLogger(), metrics.NoopReporter())))
+		WithBackend(memory.NewMemoryBackend(conf)))
 	if err != nil {
 		b.Error(err)
 	}
