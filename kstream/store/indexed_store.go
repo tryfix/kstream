@@ -23,8 +23,6 @@ type Index interface {
 	Keys() []interface{}
 	Values() map[interface{}][]interface{}
 	ValueIndexed(index, value interface{}) (bool, error)
-	//goEncoding.TextMarshaler
-	//goEncoding.TextUnmarshaler
 }
 
 type IndexedStore interface {
