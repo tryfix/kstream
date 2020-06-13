@@ -118,18 +118,18 @@ func (c *kafkaAdmin) FetchInfo(topics []string) (map[string]*Topic, error) {
 }
 
 func (c *kafkaAdmin) CreateTopics(topics map[string]*Topic) error {
-	for _, info := range topics {
+	for name, info := range topics {
 		details := &sarama.TopicDetail{
 			NumPartitions:     info.NumPartitions,
 			ReplicationFactor: info.ReplicationFactor,
 			ReplicaAssignment: info.ReplicaAssignment,
 		}
 		details.ConfigEntries = map[string]*string{}
-		for name, config := range info.ConfigEntries {
-			details.ConfigEntries[name] = &config
+		for cName, config := range info.ConfigEntries {
+			details.ConfigEntries[cName] = &config
 		}
 
-		err := c.admin.CreateTopic(info.Name, details, false)
+		err := c.admin.CreateTopic(name, details, false)
 		if err != nil {
 			if e, ok := err.(*sarama.TopicError); ok && (e.Err == sarama.ErrTopicAlreadyExists || e.Err == sarama.ErrNoError) {
 				c.logger.Warn(err)
