@@ -131,7 +131,7 @@ func (c *kafkaAdmin) CreateTopics(topics map[string]*Topic) error {
 
 		err := c.admin.CreateTopic(info.Name, details, false)
 		if err != nil {
-			if e, ok := err.(sarama.KError); ok && e == sarama.ErrTopicAlreadyExists || e == sarama.ErrNoError {
+			if e, ok := err.(*sarama.TopicError); ok && (e.Err == sarama.ErrTopicAlreadyExists || e.Err == sarama.ErrNoError) {
 				c.logger.Warn(err)
 				continue
 			}
