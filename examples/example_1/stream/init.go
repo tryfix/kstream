@@ -2,6 +2,7 @@ package stream
 
 import (
 	"github.com/google/uuid"
+	"github.com/tryfix/kstream/admin"
 	"github.com/tryfix/kstream/consumer"
 	"github.com/tryfix/kstream/data"
 	"github.com/tryfix/kstream/examples/example_1/encoders"
@@ -43,6 +44,8 @@ func Init() {
 	builderConfig.MetricsReporter = metrics.PrometheusReporter(metrics.ReporterConf{`streams`, `k_stream_test`, nil})
 	builderConfig.Logger = log.StdLogger
 
+	kAdmin := admin.NewKafkaAdmin(builderConfig.BootstrapServers, admin.WithLogger(log.StdLogger))
+	CreateTopics(kAdmin)
 	//builderConfig.Producer.Pool.NumOfWorkers = 1
 
 	builder := kstream.NewStreamBuilder(builderConfig)
@@ -90,6 +93,34 @@ func Init() {
 		log.Fatal(log.WithPrefix(`boot.boot.Init`, `error in stream starting`), err)
 	}
 
+}
+
+func CreateTopics(kAdmin admin.KafkaAdmin) {
+	var topics = map[string]*admin.Topic{
+		`transaction`: {
+			NumPartitions:     2,
+			ReplicationFactor: 1,
+		},
+		`account_detail`: {
+			NumPartitions:     2,
+			ReplicationFactor: 1,
+			ConfigEntries: map[string]string{
+				`cleanup.policy`: `compact`,
+			},
+		},
+		`customer_profile`: {
+			NumPartitions:     2,
+			ReplicationFactor: 1,
+			ConfigEntries: map[string]string{
+				`cleanup.policy`: `compact`,
+			},
+		},
+	}
+
+	defer kAdmin.Close()
+	if err := kAdmin.CreateTopics(topics); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func InitStreams(builder *kstream.StreamBuilder) []kstream.Stream {

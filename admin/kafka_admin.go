@@ -96,7 +96,6 @@ func (c *kafkaAdmin) FetchInfo(topics []string) (map[string]*Topic, error) {
 	}
 
 	for _, tp := range topicMeta {
-
 		var pts []Partition
 		for _, pt := range tp.Partitions {
 			pts = append(pts, Partition{
@@ -111,6 +110,20 @@ func (c *kafkaAdmin) FetchInfo(topics []string) (map[string]*Topic, error) {
 		}
 		if tp.Err != sarama.ErrNoError {
 			topicInfo[tp.Name].Error = tp.Err
+		}
+
+		// configs
+		confs, err := c.admin.DescribeConfig(sarama.ConfigResource{
+			Type:        sarama.TopicResource,
+			Name:        tp.Name,
+			ConfigNames: []string{`cleanup.policy`, `min.insync.replicas`, `retention.ms`},
+		})
+		if err != nil {
+			return nil, err
+		}
+		topicInfo[tp.Name].ConfigEntries = map[string]string{}
+		for _, co := range confs {
+			topicInfo[tp.Name].ConfigEntries[co.Name] = co.Value
 		}
 	}
 
