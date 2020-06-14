@@ -6,7 +6,6 @@ import (
 	"testing"
 )
 
-
 func TestKafkaAdmin_FetchInfo(t *testing.T) {
 	seedBroker := sarama.NewMockBroker(t, 1)
 	defer seedBroker.Close()
@@ -16,6 +15,7 @@ func TestKafkaAdmin_FetchInfo(t *testing.T) {
 			SetController(seedBroker.BrokerID()).
 			SetLeader("my_topic", 0, seedBroker.BrokerID()).
 			SetBroker(seedBroker.Addr(), seedBroker.BrokerID()),
+		"DescribeConfigsRequest": sarama.NewMockDescribeConfigsResponse(t),
 	})
 
 	config := sarama.NewConfig()
@@ -27,7 +27,7 @@ func TestKafkaAdmin_FetchInfo(t *testing.T) {
 
 	topic := `my_topic`
 	admin := &kafkaAdmin{
-		admin: saramaAdmin,
+		admin:  saramaAdmin,
 		logger: log.NewNoopLogger(),
 	}
 	tps, err := admin.FetchInfo([]string{topic})
@@ -65,13 +65,13 @@ func TestKafkaAdmin_CreateTopics(t *testing.T) {
 
 	topic := `my_topic`
 	admin := &kafkaAdmin{
-		admin: saramaAdmin,
+		admin:  saramaAdmin,
 		logger: log.NewNoopLogger(),
 	}
 
 	err = admin.CreateTopics(map[string]*Topic{
 		topic: {
-			Name: topic,
+			Name:              topic,
 			NumPartitions:     1,
 			ReplicationFactor: 1,
 		},
@@ -105,7 +105,7 @@ func TestKafkaAdmin_DeleteTopics(t *testing.T) {
 
 	topic := `my_topic`
 	admin := &kafkaAdmin{
-		admin: saramaAdmin,
+		admin:  saramaAdmin,
 		logger: log.NewNoopLogger(),
 	}
 
