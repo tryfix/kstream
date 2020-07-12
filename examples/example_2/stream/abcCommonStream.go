@@ -1,13 +1,14 @@
 package stream
 
 import (
+	"github.com/tryfix/kstream/examples/example_2/domain"
 	"github.com/tryfix/kstream/examples/example_2/encoders"
 	"github.com/tryfix/kstream/kstream"
 )
 
 func initCommonStream(builder *kstream.StreamBuilder) kstream.Stream {
 	str := builder.Stream(
-		`common.ab`,
+		domain.ABCTopic,
 		encoders.StringEncoder,
 		encoders.CommonABEncoder,
 		kstream.WithConfig(map[string]interface{}{

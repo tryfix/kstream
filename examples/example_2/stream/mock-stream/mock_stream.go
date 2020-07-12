@@ -7,6 +7,7 @@ import (
 	"github.com/tryfix/kstream/admin"
 	"github.com/tryfix/kstream/consumer"
 	"github.com/tryfix/kstream/data"
+	"github.com/tryfix/kstream/examples/example_2/domain"
 	"github.com/tryfix/kstream/examples/example_2/encoders"
 	"github.com/tryfix/kstream/examples/example_2/events"
 	"github.com/tryfix/kstream/examples/example_2/stream"
@@ -28,8 +29,8 @@ func setupMockBuilders() *kstream.StreamBuilder {
 	}
 
 	if err := kafkaAdmin.CreateTopics(map[string]*admin.Topic{
-		`common.ab`: {
-			Name:              "common.ab",
+		domain.ABCTopic: {
+			Name:              domain.ABCTopic,
 			NumPartitions:     2,
 			ReplicationFactor: 1,
 		},
@@ -173,11 +174,15 @@ func produceAAndB(streamProducer producer.Producer) {
 		produceA(streamProducer, key)
 		time.Sleep(time.Millisecond * 100)
 		produceB(streamProducer, key)
+		time.Sleep(time.Millisecond * 100)
+		produceC(streamProducer, key)
 
 		time.Sleep(time.Millisecond * 500)
 
 		key = uuid.New().String()
 		produceB(streamProducer, key)
+		time.Sleep(time.Millisecond * 100)
+		produceC(streamProducer, key)
 		time.Sleep(time.Millisecond * 100)
 		produceA(streamProducer, key)
 
@@ -205,7 +210,7 @@ func produceA(streamProducer producer.Producer, key string) {
 	_, _, err = streamProducer.Produce(context.Background(), &data.Record{
 		Key:       encodedKey,
 		Value:     encodedVal,
-		Topic:     `common.ab`,
+		Topic:     domain.ABCTopic,
 		Timestamp: time.Now(),
 	})
 
@@ -234,7 +239,36 @@ func produceB(streamProducer producer.Producer, key string) {
 	_, _, err = streamProducer.Produce(context.Background(), &data.Record{
 		Key:       encodedKey,
 		Value:     encodedVal,
-		Topic:     `common.ab`,
+		Topic:     domain.ABCTopic,
+		Timestamp: time.Now(),
+	})
+
+	if err != nil {
+		log.Error(err)
+	}
+}
+
+func produceC(streamProducer producer.Producer, key string) {
+	event := events.CC{
+		ID:        uuid.New().String(),
+		Type:      `cc`,
+		CCC:       fmt.Sprintf(`ccc with key : %v`, key),
+		Timestamp: time.Now().UnixNano() / 1e6,
+	}
+
+	encodedKey, err := encoders.StringEncoder().Encode(key)
+	if err != nil {
+		log.Error(err, event)
+	}
+	encodedVal, err := encoders.CCEncoder().Encode(event)
+	if err != nil {
+		log.Error(err, event)
+	}
+
+	_, _, err = streamProducer.Produce(context.Background(), &data.Record{
+		Key:       encodedKey,
+		Value:     encodedVal,
+		Topic:     domain.ABCTopic,
 		Timestamp: time.Now(),
 	})
 

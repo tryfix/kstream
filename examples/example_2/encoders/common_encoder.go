@@ -41,6 +41,14 @@ func (t CommonEncoder) Decode(data []byte) (interface{}, error) {
 		}
 		return ad, nil
 
+	case `cc`:
+		ad := events.CC{}
+		err := json.Unmarshal(data, &ad)
+		if err != nil {
+			return nil, err
+		}
+		return ad, nil
+
 	default:
 		return nil, errors.New(fmt.Sprintf(`unexpected type received :- %v`, te.Type))
 	}

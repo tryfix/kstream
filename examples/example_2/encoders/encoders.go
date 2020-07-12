@@ -11,5 +11,5 @@ var StringEncoder = func() encoding.Encoder { return encoding.StringEncoder{} }
 var CommonABEncoder = func() encoding.Encoder { return CommonEncoder{} }
 
 var AAEncoder = func() encoding.Encoder { return events.AA{} }
-
 var BBEncoder = func() encoding.Encoder { return events.BB{} }
+var CCEncoder = func() encoding.Encoder { return events.CC{} }
