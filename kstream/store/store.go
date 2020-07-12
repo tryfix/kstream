@@ -130,7 +130,7 @@ func (s *store) Set(ctx context.Context, key interface{}, value interface{}, exp
 
 	v, err := s.valEncoder.Encode(value)
 	if err != nil {
-		return errors.WithPrevious(err, fmt.Sprintf(`store [%s] key encode err `, s.name))
+		return errors.WithPrevious(err, fmt.Sprintf(`store [%s] value encode err `, s.name))
 	}
 
 	// if changelog enable write record to the changelog
@@ -185,7 +185,7 @@ func (s *store) GetRange(ctx context.Context, fromKey interface{}, toKey interfa
 
 		k, err := s.keyEncoder.Decode(i.Key())
 		if err != nil {
-			return nil, errors.WithPrevious(err, fmt.Sprintf(`store [%s] value decode err `, s.name))
+			return nil, errors.WithPrevious(err, fmt.Sprintf(`store [%s] key decode err `, s.name))
 		}
 
 		if len(i.Value()) < 1 {

@@ -46,10 +46,11 @@ var globalTableIndexedStoreWriter = func(r *data.Record, store store.Store) erro
 	if err != nil {
 		return errors.WithPrevious(err, `indexable-store-writer key decode error`)
 	}
+
 	if r.Value == nil {
 		return store.Delete(context.Background(), k)
 	}
-
+	// tombstone handling
 	v, err := store.ValEncoder().Decode(r.Value)
 	if err != nil {
 		return errors.WithPrevious(err, `indexable-store-writer value decode error`)
