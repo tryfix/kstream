@@ -15,8 +15,10 @@ type RecoverableStore interface {
 
 type recoverableStore struct {
 	Store
-	logger    log.Logger
-	changelog changelog.Changelog
+	logger     log.Logger
+	recovering bool
+	topic      string
+	changelog  changelog.Changelog
 }
 
 func (s *recoverableStore) Recover(ctx context.Context) error {

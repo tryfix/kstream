@@ -13,8 +13,8 @@ import (
 	"github.com/tryfix/kstream/admin"
 	"github.com/tryfix/kstream/kstream/branch"
 	"github.com/tryfix/kstream/kstream/encoding"
-	"github.com/tryfix/kstream/kstream/internal/join"
 	"github.com/tryfix/kstream/kstream/processors"
+	"github.com/tryfix/kstream/kstream/processors/join"
 	"github.com/tryfix/kstream/kstream/topology"
 	"github.com/tryfix/kstream/kstream/worker_pool"
 	"github.com/tryfix/log"
@@ -42,9 +42,10 @@ type Stream interface {
 	Process(processor processors.ProcessFunc) Stream
 	JoinGlobalTable(table Stream, keyMapper join.KeyMapper, valMapper join.ValueMapper, typ join.Type) Stream
 	JoinKTable(stream Stream, keyMapper join.KeyMapper, valMapper join.ValueMapper) Stream
-	JoinStream(stream Stream, valMapper join.ValueMapper, opts ...RepartitionOption) Stream
+	JoinStream(stream Stream, valMapper join.ValueMapper, opts ...join.RepartitionOption) Stream
 	//LeftJoin(stream Stream, keyMapper join.KeyMapper, valMapper join.ValueMapper) Stream
 	Through(topic string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...SinkOption) Stream
+	Materialize(topic, storeName string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...processors.MaterializeOption) Stream
 	To(topic string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...SinkOption)
 }
 
@@ -379,14 +380,14 @@ func (s *kStream) JoinGlobalTable(stream Stream, keyMapper join.KeyMapper, valMa
 	return joined
 }
 
-func (s *kStream) JoinStream(stream Stream, valMapper join.ValueMapper, opts ...RepartitionOption) Stream {
+func (s *kStream) JoinStream(stream Stream, valMapper join.ValueMapper, opts ...join.RepartitionOption) Stream {
 	rightStream, ok := stream.(*kStream)
 	if !ok {
 		log.Fatal(`k-stream.kStream`,
 			`unsupported join type for stream joiner, only k-streams are supported`)
 	}
 
-	var repartition = &RepartitionOptions{
+	var repartition = &join.RepartitionOptions{
 		LeftTopic:  s.rootStream.topic,
 		RightTopic: rightStream.rootStream.topic,
 	}
@@ -419,7 +420,7 @@ func (s *kStream) JoinStream(stream Stream, valMapper join.ValueMapper, opts ...
 	right.AddChildBuilder(joinedNode)
 
 	var setNewRightStream = func() *kStream {
-		err := repartition.RightRepartition.Validate(RightSide)
+		err := repartition.RightRepartition.Validate(join.RightSide)
 		if err != nil {
 			log.Fatal(`k-stream.kStream`, err)
 		}
@@ -433,7 +434,7 @@ func (s *kStream) JoinStream(stream Stream, valMapper join.ValueMapper, opts ...
 	}
 
 	var setNewLeftStream = func() *kStream {
-		err := repartition.LeftRepartition.Validate(LeftSide)
+		err := repartition.LeftRepartition.Validate(join.LeftSide)
 		if err != nil {
 			log.Fatal(`k-stream.kStream`, err)
 		}
@@ -552,6 +553,23 @@ func (s *kStream) Through(topic string, keyEncoder encoding.Builder, valEncoder 
 	s.streams = append(s.streams, stream)
 
 	return stream
+}
+
+func (s *kStream) Materialize(topic, storeName string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...processors.MaterializeOption) Stream {
+	m := processors.NewMaterializeBuilder(topic, storeName, atomic.AddInt32(&nodeCounter, 1), options...)
+
+	s.Node.AddChild(m)
+	s.NodeBuilder.AddChildBuilder(m)
+
+	materialized := newKStream(nil, nil, nil, s)
+	materialized.Node = m
+	materialized.NodeBuilder = m
+	materialized.rootStream = s.rootStream
+	materialized.keySelected = s.keySelected
+
+	materialized.To(topic, keyEncoder, valEncoder)
+
+	return materialized
 }
 
 func (s *kStream) To(topic string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...SinkOption) {

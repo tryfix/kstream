@@ -12,8 +12,8 @@ import (
 	"github.com/tryfix/errors"
 	"github.com/tryfix/kstream/data"
 	"github.com/tryfix/kstream/kstream/encoding"
-	"github.com/tryfix/kstream/kstream/internal/join"
 	"github.com/tryfix/kstream/kstream/processors"
+	"github.com/tryfix/kstream/kstream/processors/join"
 	"github.com/tryfix/kstream/kstream/store"
 	"github.com/tryfix/log"
 )
@@ -59,9 +59,11 @@ var globalTableIndexedStoreWriter = func(r *data.Record, store store.Store) erro
 }
 
 type globalTableOptions struct {
-	initialOffset GlobalTableOffset
-	logger        log.Logger
-	backendWriter StoreWriter
+	initialOffset           GlobalTableOffset
+	logger                  log.Logger
+	backendWriter           StoreWriter
+	recordVersionExtractor  RecordVersionExtractor
+	recordVersionComparator RecordVersionComparator
 }
 
 type GlobalTableOption func(options *globalTableOptions)
@@ -77,6 +79,20 @@ func GlobalTableWithOffset(offset GlobalTableOffset) GlobalTableOption {
 func GlobalTableWithLogger(logger log.Logger) GlobalTableOption {
 	return func(options *globalTableOptions) {
 		options.logger = logger
+	}
+}
+
+// GlobalTableWithVersionExtractor adds the version extractor for the GlobalTable from past records (default is nil).
+func GlobalTableWithVersionExtractor(extractor RecordVersionExtractor) GlobalTableOption {
+	return func(options *globalTableOptions) {
+		options.recordVersionExtractor = extractor
+	}
+}
+
+// GlobalTableWithVersionComparator adds the version extractor for the GlobalTable from past records (default is nil).
+func GlobalTableWithVersionComparator(comparator RecordVersionComparator) GlobalTableOption {
+	return func(options *globalTableOptions) {
+		options.recordVersionComparator = comparator
 	}
 }
 

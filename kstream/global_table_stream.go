@@ -8,6 +8,7 @@
 package kstream
 
 import (
+	"context"
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/tryfix/errors"
@@ -26,6 +27,8 @@ import (
 var offsetBackendName = `__k-table-offsets`
 
 type StoreWriter func(r *data.Record, store store.Store) error
+type RecordVersionExtractor func(ctx context.Context, key, value interface{}) (int64, error)
+type RecordVersionComparator func(newVersion, currentVersion int64) bool
 
 type tp struct {
 	topic     string
@@ -105,6 +108,8 @@ func newGlobalTableStream(tables map[string]*globalKTable, config *GlobalTableSt
 			t.offsetKey = []byte(t.tp.String())
 			t.store = tables[t.tp.topic].store
 			t.storeWriter = tables[t.tp.topic].options.backendWriter
+			t.recordVersionExtractor = tables[t.tp.topic].options.recordVersionExtractor
+			t.recordVersionComparator = tables[t.tp.topic].options.recordVersionComparator
 			t.restartOnFailure = true
 			t.restartOnFailureCount = 1
 			t.consumer = partitionConsumer
