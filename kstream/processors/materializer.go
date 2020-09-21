@@ -22,7 +22,7 @@ type Materializer struct {
 	childs           []topology.Node
 }
 
-func NewMaterializeBuilder(topic, store string, id int32, options ...MaterializeOption) *Materializer {
+func NewMaterializeBuilder(topic, store string, registry store.Registry, id int32, options ...MaterializeOption) *Materializer {
 	builder := &Materializer{
 		Topic: topic,
 		Id:    id,
@@ -30,6 +30,7 @@ func NewMaterializeBuilder(topic, store string, id int32, options ...Materialize
 		VersionWriter: func(ctx context.Context, version int64, vIn interface{}) (vOut interface{}, err error) {
 			return vIn, nil
 		},
+		Registry: registry,
 		//VersionExtractor: func(key, value interface{}) (version int64, err error) {
 		//	return 1, nil
 		//},

@@ -556,7 +556,7 @@ func (s *kStream) Through(topic string, keyEncoder encoding.Builder, valEncoder 
 }
 
 func (s *kStream) Materialize(topic, storeName string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...processors.MaterializeOption) Stream {
-	m := processors.NewMaterializeBuilder(topic, storeName, atomic.AddInt32(&nodeCounter, 1), options...)
+	m := processors.NewMaterializeBuilder(topic, storeName, s.rootStream.config.builder.storeRegistry, atomic.AddInt32(&nodeCounter, 1), options...)
 
 	s.Node.AddChild(m)
 	s.NodeBuilder.AddChildBuilder(m)
