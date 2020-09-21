@@ -229,7 +229,7 @@ func (t *tableInstance) processRecord(r *data.Record) error {
 }
 
 func (t *tableInstance) writable(r *data.Record) (bool, error) {
-	if t.recordVersionExtractor != nil || r.Value != nil {
+	if t.recordVersionExtractor != nil && r.Value != nil {
 		k, err := t.store.KeyEncoder().Decode(r.Key)
 		if err != nil {
 			return false, errors.WithPrevious(err, `key decode error`)

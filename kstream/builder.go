@@ -222,6 +222,9 @@ func (b *StreamBuilder) GlobalTable(topic string, keyEncoder encoding.Builder, v
 	opts := new(globalTableOptions)
 	opts.initialOffset = GlobalTableOffsetDefault
 	opts.backendWriter = globalTableStoreWriter
+	opts.recordVersionComparator = func(newVersion, currentVersion int64) bool {
+		return newVersion > currentVersion
+	}
 	for _, o := range options {
 		o(opts)
 	}
