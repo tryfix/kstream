@@ -9,6 +9,7 @@ package kstream
 
 import (
 	"fmt"
+	"github.com/Shopify/sarama"
 	saramaMetrics "github.com/rcrowley/go-metrics"
 	"github.com/tryfix/errors"
 	"github.com/tryfix/kstream/admin"
@@ -116,6 +117,11 @@ func NewStreamBuilder(config *StreamBuilderConfig, options ...BuilderOption) *St
 	config.validate()
 
 	config.DefaultBuilders.build(options...)
+
+	//enabling kafka broker logs
+	if config.KafkaLogsEnabled {
+		sarama.Logger = config.Logger.NewLog(log.Prefixed(`broker`))
+	}
 
 	b := &StreamBuilder{
 		config:          config,

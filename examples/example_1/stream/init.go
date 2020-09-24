@@ -32,6 +32,8 @@ func Init() {
 	//builderConfig.Store.StorageDir = `storage`
 	builderConfig.Store.Http.Host = `:9002`
 	builderConfig.ChangeLog.Enabled = false
+
+	builderConfig.KafkaLogsEnabled = true
 	//builderConfig.ChangeLog.Buffer.Enabled = true
 	//builderConfig.ChangeLog.Buffer.Size = 100
 	//builderConfig.ChangeLog.ReplicationFactor = 3
