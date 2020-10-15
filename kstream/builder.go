@@ -9,6 +9,7 @@ package kstream
 
 import (
 	"fmt"
+	"github.com/Shopify/sarama"
 	saramaMetrics "github.com/rcrowley/go-metrics"
 	"github.com/tryfix/errors"
 	"github.com/tryfix/kstream/admin"
@@ -117,6 +118,11 @@ func NewStreamBuilder(config *StreamBuilderConfig, options ...BuilderOption) *St
 
 	config.DefaultBuilders.build(options...)
 
+	//enabling kafka broker logs
+	if config.KafkaLogsEnabled {
+		sarama.Logger = config.Logger.NewLog(log.Prefixed(`broker`))
+	}
+
 	b := &StreamBuilder{
 		config:          config,
 		streams:         make(map[string]*kStream),
@@ -222,6 +228,9 @@ func (b *StreamBuilder) GlobalTable(topic string, keyEncoder encoding.Builder, v
 	opts := new(globalTableOptions)
 	opts.initialOffset = GlobalTableOffsetDefault
 	opts.backendWriter = globalTableStoreWriter
+	opts.recordVersionComparator = func(newVersion, currentVersion int64) bool {
+		return newVersion > currentVersion
+	}
 	for _, o := range options {
 		o(opts)
 	}

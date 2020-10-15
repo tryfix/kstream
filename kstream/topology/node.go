@@ -11,6 +11,7 @@ const TypeSink Type = `sink`
 const TypeBranch Type = `branch`
 const TypeThrough Type = `through`
 const TypeJoiner Type = `joiner`
+const TypeMaterialize Type = `materializer`
 
 type Node interface {
 	Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut interface{}, cont bool, err error)

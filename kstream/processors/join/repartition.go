@@ -1,4 +1,4 @@
-package kstream
+package join
 
 import (
 	"fmt"
@@ -30,8 +30,8 @@ type Repartition struct {
 }
 
 type RepartitionOptions struct {
-	LeftTopic        topic
-	RightTopic       topic
+	LeftTopic        func(string) string
+	RightTopic       func(string) string
 	LeftRepartition  Repartition
 	RightRepartition Repartition
 }

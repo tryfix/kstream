@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/awalterschulze/gographviz"
 	"github.com/tryfix/kstream/kstream/branch"
-	"github.com/tryfix/kstream/kstream/internal/join"
 	"github.com/tryfix/kstream/kstream/processors"
+	"github.com/tryfix/kstream/kstream/processors/join"
 	"github.com/tryfix/kstream/kstream/store"
 	"github.com/tryfix/kstream/kstream/topology"
 	"strings"
@@ -272,19 +272,20 @@ func (g *Graph) Build() string {
 func draw(parent string, builders []topology.NodeBuilder, graph *Graph) {
 
 	var nodeName string
-	for id, b := range builders {
-		edgeAttr := map[string]string{
-			`label`: fmt.Sprintf(`"%d"`, id+1),
-		}
+	for _, b := range builders {
 		switch n := b.(type) {
 		case *processors.Processor:
 			nName := n.Name() + fmt.Sprint(n.ID())
 			nodeName = nName
-			graph.Processor(parent, nName, map[string]string{
-				//`label`: fmt.Sprintf(`"%s"`, n.Name()),
-				`label`: `"PRO"`,
-				`shape`: `square`,
-			}, edgeAttr)
+			graph.Processor(parent, nName,
+				map[string]string{
+					//`label`: fmt.Sprintf(`"%s"`, n.Name()),
+					`label`: `"PRO"`,
+					`shape`: `square`,
+				},
+				map[string]string{
+					`label`: fmt.Sprintf(`"%d"`, n.ID()),
+				})
 
 		case topology.SinkBuilder:
 			//nName := parent + fmt.Sprint(n.ID())
@@ -292,17 +293,25 @@ func draw(parent string, builders []topology.NodeBuilder, graph *Graph) {
 			nName = strings.ReplaceAll(nName, `.`, `_`)
 			nName = strings.ReplaceAll(nName, `-`, `_`)
 			nodeName = nName
-			graph.Sink(parent, nName, map[string]string{
-				`label`: fmt.Sprintf(`"%s"`, nodeInfo(n.SinkType(), n.Name(), n.Info())),
-				`shape`: `square`,
-			}, edgeAttr)
+			graph.Sink(parent, nName,
+				map[string]string{
+					`label`: fmt.Sprintf(`"%s"`, nodeInfo(n.SinkType(), n.Name(), n.Info())),
+					`shape`: `square`,
+				},
+				map[string]string{
+					`label`: fmt.Sprintf(`"%d"`, n.ID()),
+				})
 
 		case *branch.Branch:
 			nName := string(n.Type()) + fmt.Sprint(n.ID())
 			nodeName = nName
-			graph.Predicate(parent, nName, map[string]string{
-				`label`: fmt.Sprintf(`"  P \n   %s  "`, n.Name),
-			}, edgeAttr)
+			graph.Predicate(parent, nName,
+				map[string]string{
+					`label`: fmt.Sprintf(`"  P \n   %s  "`, n.Name),
+				},
+				map[string]string{
+					`label`: fmt.Sprintf(`"%d"`, n.ID()),
+				})
 
 		case *join.GlobalTableJoiner:
 			nName := string(n.Type()) + fmt.Sprint(n.ID())
@@ -311,63 +320,95 @@ func draw(parent string, builders []topology.NodeBuilder, graph *Graph) {
 			if n.Typ == join.LeftJoin {
 				typ = `LEFT`
 			}
-			graph.Joiner(parent, nName, n.Store, map[string]string{
-				`label`: fmt.Sprintf(`< <B>%s</B> >`, typ+` JOIN`),
-			}, edgeAttr)
+			graph.Joiner(parent, nName, n.Store,
+				map[string]string{
+					`label`: fmt.Sprintf(`< <B>%s</B> >`, typ+` JOIN`),
+				},
+				map[string]string{
+					`label`: fmt.Sprintf(`"%d"`, n.ID()),
+				})
 
 		case *processors.Filter:
 			nName := n.Name() + fmt.Sprint(n.ID())
 			nodeName = nName
-			graph.Processor(parent, nName, map[string]string{
-				`label`: `"F"`,
-				`shape`: `square`,
-			}, edgeAttr)
+			graph.Processor(parent, nName,
+				map[string]string{
+					`label`: `"F"`,
+					`shape`: `square`,
+				},
+				map[string]string{
+					`label`: fmt.Sprintf(`"%d"`, n.ID()),
+				})
 
 		case *processors.Transformer:
 			nName := n.Name() + fmt.Sprint(n.ID())
 			nodeName = nName
-			graph.Processor(parent, nName, map[string]string{
-				`label`: `"T"`,
-				`shape`: `square`,
-			}, edgeAttr)
+			graph.Processor(parent, nName,
+				map[string]string{
+					`label`: `"T"`,
+					`shape`: `square`,
+				},
+				map[string]string{
+					`label`: fmt.Sprintf(`"%d"`, n.ID()),
+				})
 
 		case *branch.Splitter:
 			i := n.ID()
 			nName := string(n.Type()) + fmt.Sprint(i)
 			nodeName = nName
 
-			graph.Branch(parent, nName, false, int(i), map[string]string{
-				`label`: fmt.Sprintf(`"%s"`, "BS"),
-			}, edgeAttr)
+			graph.Branch(parent, nName, false, int(i),
+				map[string]string{
+					`label`: fmt.Sprintf(`"%s"`, "BS"),
+				},
+				map[string]string{
+					`label`: fmt.Sprintf(`"%d"`, n.ID()),
+				})
 
 		case *processors.KeySelector:
 			nName := string(n.Type()) + fmt.Sprint(n.ID())
 			nodeName = nName
-			graph.Processor(parent, nName, map[string]string{
-				`label`: `"KS"`,
-				`shape`: `square`,
-			}, edgeAttr)
+			graph.Processor(parent, nName,
+				map[string]string{
+					`label`: `"KS"`,
+					`shape`: `square`,
+				},
+				map[string]string{
+					`label`: fmt.Sprintf(`"%d"`, n.ID()),
+				})
 		case *processors.ValueTransformer:
 			nName := string(n.Type()) + fmt.Sprint(n.ID())
 			nodeName = nName
-			graph.Processor(parent, nName, map[string]string{
-				`label`: `"TV"`,
-				`shape`: `square`,
-			}, edgeAttr)
+			graph.Processor(parent, nName,
+				map[string]string{
+					`label`: `"TV"`,
+					`shape`: `square`,
+				},
+				map[string]string{
+					`label`: fmt.Sprintf(`"%d"`, n.ID()),
+				})
 		case *join.SideJoiner:
 			nName := string(n.Type()) + fmt.Sprint(n.ID())
 			nodeName = nName
 
-			graph.StreamJoiner(parent, nName, ``, map[string]string{
-				`label`: fmt.Sprintf(`< <B>%s</B> >`, string(n.Type())+`_JOIN`),
-			}, edgeAttr)
+			graph.StreamJoiner(parent, nName, ``,
+				map[string]string{
+					`label`: fmt.Sprintf(`< <B>%s</B> >`, string(n.Type())+`_JOIN`),
+				},
+				map[string]string{
+					`label`: fmt.Sprintf(`"%d"`, n.ID()),
+				})
 		case *join.StreamJoiner:
 			nName := string(n.Type()) + fmt.Sprint(n.ID())
 			nodeName = nName
 
-			graph.StreamJoiner(parent, nName, ``, map[string]string{
-				`label`: fmt.Sprintf(`< <B>%s</B> >`, string(n.Type())+`_JOIN`),
-			}, edgeAttr)
+			graph.StreamJoiner(parent, nName, ``,
+				map[string]string{
+					`label`: fmt.Sprintf(`< <B>%s</B> >`, string(n.Type())+`_JOIN`),
+				},
+				map[string]string{
+					`label`: fmt.Sprintf(`"%d"`, n.ID()),
+				})
 		}
 
 		draw(nodeName, b.ChildBuilders(), graph)

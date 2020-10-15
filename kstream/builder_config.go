@@ -64,10 +64,11 @@ type StreamBuilderConfig struct {
 	Consumer      *consumer.Config
 	ConsumerCount int
 	*sarama.Config
-	Producer        *producer.Config
-	MetricsReporter metrics.Reporter
-	Logger          log.Logger
-	DefaultBuilders *DefaultBuilders
+	Producer         *producer.Config
+	KafkaLogsEnabled bool
+	MetricsReporter  metrics.Reporter
+	Logger           log.Logger
+	DefaultBuilders  *DefaultBuilders
 }
 
 var logger = log.NewLog(log.WithColors(true), log.WithFilePath(true), log.WithLevel(log.TRACE), log.Prefixed(`k-stream`)).Log()
@@ -98,6 +99,8 @@ func NewStreamBuilderConfig() *StreamBuilderConfig {
 	config.Producer.RequiredAcks = producer.WaitForAll
 	//config.Producer.BatchNumMessages = 1
 	//config.Producer.QueueBufferingMax = 1
+
+	config.KafkaLogsEnabled = false
 
 	//set default task execution order
 	config.WorkerPool = &worker_pool.PoolConfig{

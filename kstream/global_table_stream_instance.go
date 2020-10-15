@@ -28,23 +28,25 @@ import (
 )
 
 type tableInstance struct {
-	tp                    tp
-	offsetBackend         backend.Backend
-	offsetKey             []byte
-	store                 store.Store
-	storeWriter           StoreWriter
-	config                *globalKTable
-	restartOnFailure      bool
-	restartOnFailureCount int
-	consumer              consumer.PartitionConsumer
-	offsets               offsets.Manager
-	synced, stopped       chan bool
-	syncedCount           int64
-	startOffset           int64
-	endOffset             int64
-	localOffset           int64
-	logger                log.Logger
-	metrics               struct {
+	tp                      tp
+	offsetBackend           backend.Backend
+	offsetKey               []byte
+	store                   store.Store
+	storeWriter             StoreWriter
+	recordVersionExtractor  RecordVersionExtractor
+	recordVersionComparator RecordVersionComparator
+	config                  *globalKTable
+	restartOnFailure        bool
+	restartOnFailureCount   int
+	consumer                consumer.PartitionConsumer
+	offsets                 offsets.Manager
+	synced, stopped         chan bool
+	syncedCount             int64
+	startOffset             int64
+	endOffset               int64
+	localOffset             int64
+	logger                  log.Logger
+	metrics                 struct {
 		consumedLatency metrics.Observer
 	}
 }
@@ -205,9 +207,17 @@ func (t *tableInstance) process(r *data.Record, retry int, err error) error {
 }
 
 func (t *tableInstance) processRecord(r *data.Record) error {
+
+	writable, err := t.writable(r)
+	if err != nil {
+		return err
+	}
+
 	// log compaction (tombstone)
-	if err := t.storeWriter(r, t.store); err != nil {
-		return errors.WithPrevious(err, `record process failed`)
+	if writable {
+		if err := t.storeWriter(r, t.store); err != nil {
+			return errors.WithPrevious(err, `record process failed`)
+		}
 	}
 
 	// if backend is non persistent no need to store the offset locally
@@ -216,6 +226,40 @@ func (t *tableInstance) processRecord(r *data.Record) error {
 	}
 
 	return t.markOffset(r.Offset)
+}
+
+func (t *tableInstance) writable(r *data.Record) (bool, error) {
+	if t.recordVersionExtractor != nil && r.Value != nil {
+		k, err := t.store.KeyEncoder().Decode(r.Key)
+		if err != nil {
+			return false, errors.WithPrevious(err, `key decode error`)
+		}
+		v, err := t.store.ValEncoder().Decode(r.Value)
+		if err != nil {
+			return false, errors.WithPrevious(err, `value decode error`)
+		}
+		prevVal, err := t.store.Get(context.Background(), k)
+		if err != nil {
+			return false, errors.WithPrevious(err, ` store read error`)
+		}
+		newVersion, err := t.recordVersionExtractor(context.Background(), k, v)
+		if err != nil {
+			return false, errors.WithPrevious(err, ` record version extractor error for new value`)
+		}
+		// record already deleted (nothing to compare)
+		// upstream record version has to be 1
+		if prevVal == nil {
+			//return newVersion == 1, nil
+			return true, nil
+		}
+		prevVersion, err := t.recordVersionExtractor(context.Background(), k, prevVal)
+		if err != nil {
+			return false, errors.WithPrevious(err, ` record version extractor error for previous value`)
+		}
+		return t.recordVersionComparator(newVersion, prevVersion), nil
+	}
+
+	return true, nil
 }
 
 func (t *tableInstance) print() {

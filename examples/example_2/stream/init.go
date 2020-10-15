@@ -2,7 +2,6 @@ package stream
 
 import (
 	"github.com/google/uuid"
-	"github.com/tryfix/kstream/admin"
 	"github.com/tryfix/kstream/consumer"
 	"github.com/tryfix/kstream/data"
 	"github.com/tryfix/kstream/examples/example_1/encoders"
@@ -14,26 +13,27 @@ import (
 	"os/signal"
 )
 
-func init() {
+func Init() {
+
 	log.StdLogger = log.Constructor.Log(
 		log.WithLevel(`TRACE`),
 		log.WithColors(true),
 	)
-}
 
-func Init() {
+	Logger := log.NewLog(
+		log.WithLevel(`TRACE`),
+		log.WithColors(true),
+	).Log()
 
 	builderConfig := kstream.NewStreamBuilderConfig()
 	builderConfig.BootstrapServers = []string{`localhost:9092`}
-	builderConfig.ApplicationId = `k_stream_example_1`
+	builderConfig.ApplicationId = `k_stream_example_2`
 	builderConfig.ConsumerCount = 1
 	builderConfig.Host = `localhost:8100`
 	builderConfig.AsyncProcessing = true
 	//builderConfig.Store.StorageDir = `storage`
 	builderConfig.Store.Http.Host = `:9002`
 	builderConfig.ChangeLog.Enabled = false
-
-	builderConfig.KafkaLogsEnabled = true
 	//builderConfig.ChangeLog.Buffer.Enabled = true
 	//builderConfig.ChangeLog.Buffer.Size = 100
 	//builderConfig.ChangeLog.ReplicationFactor = 3
@@ -44,10 +44,8 @@ func Init() {
 	builderConfig.WorkerPool.WorkerBufferSize = 10
 
 	builderConfig.MetricsReporter = metrics.PrometheusReporter(metrics.ReporterConf{`streams`, `k_stream_test`, nil})
-	builderConfig.Logger = log.StdLogger
+	builderConfig.Logger = Logger
 
-	kAdmin := admin.NewKafkaAdmin(builderConfig.BootstrapServers, admin.WithLogger(log.StdLogger))
-	CreateTopics(kAdmin)
 	//builderConfig.Producer.Pool.NumOfWorkers = 1
 
 	builder := kstream.NewStreamBuilder(builderConfig)
@@ -97,57 +95,8 @@ func Init() {
 
 }
 
-func CreateTopics(kAdmin admin.KafkaAdmin) {
-	var topics = map[string]*admin.Topic{
-		`transaction`: {
-			NumPartitions:     2,
-			ReplicationFactor: 1,
-		},
-		`account_detail`: {
-			NumPartitions:     2,
-			ReplicationFactor: 1,
-			ConfigEntries: map[string]string{
-				`cleanup.policy`: `compact`,
-			},
-		},
-		`customer_profile`: {
-			NumPartitions:     2,
-			ReplicationFactor: 1,
-			ConfigEntries: map[string]string{
-				`cleanup.policy`: `compact`,
-			},
-		},
-	}
-
-	defer kAdmin.Close()
-	if err := kAdmin.CreateTopics(topics); err != nil {
-		log.Fatal(err)
-	}
-}
-
 func InitStreams(builder *kstream.StreamBuilder) []kstream.Stream {
 
-	transactionStream := initTransactionStream(builder)
-	accountDetailTable := initAccountDetailTable(builder)
-	customerProfileTable := initCustomerProfileTable(builder)
-
-	accountCredited := AccountCredited{
-		Upstream:             transactionStream,
-		AccountDetailTable:   accountDetailTable,
-		CustomerProfileTable: customerProfileTable,
-		KeyEncoder:           encoders.KeyEncoder,
-		MessageEncoder:       encoders.MessageEncoder,
-	}
-	accountCredited.Init()
-
-	accountDebited := AccountDebited{
-		Upstream:             transactionStream,
-		AccountDetailTable:   accountDetailTable,
-		CustomerProfileTable: customerProfileTable,
-		KeyEncoder:           encoders.KeyEncoder,
-		MessageEncoder:       encoders.MessageEncoder,
-	}
-	accountDebited.Init()
-
-	return []kstream.Stream{transactionStream, accountDetailTable, customerProfileTable}
+	commonStream := initCommonStream(builder)
+	return []kstream.Stream{commonStream}
 }
