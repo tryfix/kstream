@@ -249,7 +249,8 @@ func (t *tableInstance) writable(r *data.Record) (bool, error) {
 		// record already deleted (nothing to compare)
 		// upstream record version has to be 1
 		if prevVal == nil {
-			return newVersion == 1, nil
+			//return newVersion == 1, nil
+			return true, nil
 		}
 		prevVersion, err := t.recordVersionExtractor(context.Background(), k, prevVal)
 		if err != nil {
