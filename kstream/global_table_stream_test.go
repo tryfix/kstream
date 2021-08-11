@@ -29,7 +29,7 @@ func TestGlobalTableStream_StartStreams(t *testing.T) {
 
 		topics := make(map[string]*admin.Topic)
 		stores := make(map[string]store.Store)
-		tables := make(map[string]*globalKTable)
+		tables := make(map[string]*GlobalKTable)
 		opts := new(globalTableOptions)
 		opts.backendWriter = globalTableStoreWriter
 		opts.initialOffset = startOffset
@@ -47,7 +47,7 @@ func TestGlobalTableStream_StartStreams(t *testing.T) {
 			conf.MetricsReporter = metrics.NoopReporter()
 			stor, _ := store.NewStore(name, encoding.StringEncoder{}, encoding.StringEncoder{}, store.WithBackend(memory.NewMemoryBackend(conf)))
 			stores[name] = stor
-			tables[name] = &globalKTable{store: stor, storeName: stor.Name(), options: opts}
+			tables[name] = &GlobalKTable{store: stor, storeName: stor.Name(), options: opts}
 		}
 
 		if err := kafkaAdmin.CreateTopics(topics); err != nil {
@@ -203,7 +203,7 @@ func TestGlobalKTable_Process(t *testing.T) {
 
 		topics := make(map[string]*admin.Topic)
 		stores := make(map[string]store.Store)
-		tables := make(map[string]*globalKTable)
+		tables := make(map[string]*GlobalKTable)
 
 		name := fmt.Sprintf(`topic_test_gt_process`)
 		topics[name] = &admin.Topic{
@@ -217,7 +217,7 @@ func TestGlobalKTable_Process(t *testing.T) {
 		conf.MetricsReporter = metrics.NoopReporter()
 		stor, _ := store.NewStore(name, encoding.StringEncoder{}, encoding.StringEncoder{}, store.WithBackend(memory.NewMemoryBackend(conf)))
 		stores[name] = stor
-		tables[name] = &globalKTable{store: stor, storeName: stor.Name(), options: opts}
+		tables[name] = &GlobalKTable{store: stor, storeName: stor.Name(), options: opts}
 
 		if err := kafkaAdmin.CreateTopics(topics); err != nil {
 			t.Error(err)

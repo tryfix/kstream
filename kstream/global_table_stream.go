@@ -59,7 +59,7 @@ type GlobalTableStreamConfig struct {
 }
 
 // newGlobalTableStream starts a
-func newGlobalTableStream(tables map[string]*globalKTable, config *GlobalTableStreamConfig) (*globalTableStream, error) {
+func newGlobalTableStream(tables map[string]*GlobalKTable, config *GlobalTableStreamConfig) (*globalTableStream, error) {
 	offsetBackend, err := config.BackendBuilder(offsetBackendName)
 	if err != nil {
 		return nil, errors.WithPrevious(err, `offset backend build failed`)

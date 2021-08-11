@@ -30,7 +30,7 @@ import (
 type StreamBuilder struct {
 	config                  *StreamBuilderConfig
 	streams                 map[string]*kStream      // map[topic]topology
-	globalTables            map[string]*globalKTable // map[topic]topology
+	globalTables            map[string]*GlobalKTable // map[topic]topology
 	storeRegistry           store.Registry
 	graph                   *graph.Graph
 	logger                  log.Logger
@@ -126,7 +126,7 @@ func NewStreamBuilder(config *StreamBuilderConfig, options ...BuilderOption) *St
 	b := &StreamBuilder{
 		config:          config,
 		streams:         make(map[string]*kStream),
-		globalTables:    make(map[string]*globalKTable),
+		globalTables:    make(map[string]*GlobalKTable),
 		changelogTopics: make(map[string]*admin.Topic),
 		logger:          config.Logger,
 		metricsReporter: config.MetricsReporter,
@@ -170,7 +170,7 @@ func (b *StreamBuilder) Build(streams ...Stream) error {
 				return err
 			}
 
-		case *globalKTable:
+		case *GlobalKTable:
 			b.buildGlobalKTable(s)
 
 		default:
@@ -244,7 +244,7 @@ func (b *StreamBuilder) GlobalTable(topic string, keyEncoder encoding.Builder, v
 	}
 
 	s := b.Stream(topic, keyEncoder, valEncoder)
-	stream := &globalKTable{
+	stream := &GlobalKTable{
 		kStream:   s.(*kStream),
 		storeName: store,
 		options:   opts,
@@ -326,14 +326,14 @@ func (b *StreamBuilder) buildKStream(kStream *kStream) error {
 	return nil
 }
 
-func (b *StreamBuilder) buildGlobalKTable(table *globalKTable) {
+func (b *StreamBuilder) buildGlobalKTable(table *GlobalKTable) {
 
 	stor, err := b.storeRegistry.Store(table.storeName)
 	if err != nil {
 		b.logger.Fatal(err)
 	}
 	table.store = stor
-	//tableConfig := new(globalKTable)
+	//tableConfig := new(GlobalKTable)
 	//tableConfig.table = table
 	/*tableConfig.store.changelog.enabled = table.config.changelog.enabled
 

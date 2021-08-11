@@ -35,7 +35,7 @@ type tableInstance struct {
 	storeWriter             StoreWriter
 	recordVersionExtractor  RecordVersionExtractor
 	recordVersionComparator RecordVersionComparator
-	config                  *globalKTable
+	config                  *GlobalKTable
 	restartOnFailure        bool
 	restartOnFailureCount   int
 	consumer                consumer.PartitionConsumer

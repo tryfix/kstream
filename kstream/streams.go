@@ -58,7 +58,7 @@ func (iOpts *instancesOptions) apply(options ...InstancesOptions) {
 
 type Instances struct {
 	streams           map[int]*StreamInstance
-	globalTables      map[string]*globalKTable
+	globalTables      map[string]*GlobalKTable
 	globalTableStream *globalTableStream
 	options           *instancesOptions
 	logger            log.Logger

@@ -118,29 +118,29 @@ type GlobalTable interface {
 	Stream
 }
 
-type globalKTable struct {
+type GlobalKTable struct {
 	*kStream
 	storeName string
 	store     store.Store
 	options   *globalTableOptions
 }
 
-func (t *globalKTable) To(topic string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...SinkOption) {
+func (t *GlobalKTable) To(topic string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...SinkOption) {
 	panic(`global table dose not support stream processing`)
 }
 
-func (t *globalKTable) Transform(transformer processors.TransFunc) Stream {
+func (t *GlobalKTable) Transform(transformer processors.TransFunc) Stream {
 	panic(`global table dose not support stream transforming`)
 }
 
-func (t *globalKTable) Filter(filter processors.FilterFunc) Stream {
+func (t *GlobalKTable) Filter(filter processors.FilterFunc) Stream {
 	panic(`global table dose not support stream processing`)
 }
 
-func (t *globalKTable) Process(processor processors.ProcessFunc) Stream {
+func (t *GlobalKTable) Process(processor processors.ProcessFunc) Stream {
 	panic(`global table dose not support stream processing`)
 }
 
-func (t *globalKTable) Join(stream Stream, keyMapper join.KeyMapper, valMapper join.ValueMapper) Stream {
+func (t *GlobalKTable) Join(stream Stream, keyMapper join.KeyMapper, valMapper join.ValueMapper) Stream {
 	panic(`global table to global table joins are not supported yet`)
 }

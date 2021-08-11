@@ -355,7 +355,7 @@ func (s *kStream) Filter(filter processors.FilterFunc) Stream {
 }
 
 func (s *kStream) JoinGlobalTable(stream Stream, keyMapper join.KeyMapper, valMapper join.ValueMapper, typ join.Type) Stream {
-	joinStream, ok := stream.(*globalKTable)
+	joinStream, ok := stream.(*GlobalKTable)
 	if !ok {
 		log.Fatal(`k-stream.kStream`,
 			`unsupported join type for global table joiner, only global tables are supported`)
