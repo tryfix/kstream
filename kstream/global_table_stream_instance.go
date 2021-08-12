@@ -112,11 +112,16 @@ func (t *tableInstance) Start() error {
 	t.logger.Info(fmt.Sprintf(`table syncing...`))
 
 	ticker := time.NewTicker(1 * time.Second)
-	go func(tic *time.Ticker, topic string, partition int32) {
-		for range tic.C {
-			t.logger.Info(fmt.Sprintf(`sync progress - [%d]%% done (%d/%d)`, atomic.LoadInt64(&t.syncedCount)*100/t.endOffset, atomic.LoadInt64(&t.syncedCount), t.endOffset))
-		}
-	}(ticker, t.tp.topic, t.tp.partition)
+
+	// if endOffset == 0  and "case *consumer.PartitionEnd" not triggers before the log, it will panic with
+	// divide by zero
+	if t.endOffset != 0 {
+		go func(tic *time.Ticker, topic string, partition int32) {
+			for range tic.C {
+				t.logger.Info(fmt.Sprintf(`sync progress - [%d]%% done (%d/%d)`, atomic.LoadInt64(&t.syncedCount)*100/t.endOffset, atomic.LoadInt64(&t.syncedCount), t.endOffset))
+			}
+		}(ticker, t.tp.topic, t.tp.partition)
+	}
 
 	synced := false
 
