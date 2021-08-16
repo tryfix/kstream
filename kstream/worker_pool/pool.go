@@ -102,7 +102,7 @@ func NewPool(id string, tb *topology.TopologyBuilder, metricsReporter metrics.Re
 func (p *Pool) Run(ctx context.Context, key, val []byte, doneClb func()) {
 	w, err := p.worker(key)
 	if err != nil {
-		p.logger.ErrorContext(ctx, `k-stream.task_pool`, err)
+		p.logger.ErrorContext(ctx, `k-stream.task_pool`, err.Error())
 		return
 	}
 
@@ -170,7 +170,7 @@ func (w *worker) start() {
 	for task := range w.tasks {
 		_, _, err := w.topology.Run(task.ctx, task.key, task.val)
 		if err != nil {
-			w.logger.ErrorContext(task.ctx, `k-stream.task_pool`, err)
+			w.logger.ErrorContext(task.ctx, `k-stream.task_pool`, err.Error())
 		}
 		task.doneClb()
 	}
