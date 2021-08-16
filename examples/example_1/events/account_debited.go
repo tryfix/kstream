@@ -19,8 +19,8 @@ type AccountDebited struct {
 
 func (ad AccountDebited) Encode(data interface{}) ([]byte, error) {
 	b, err := json.Marshal(data)
-	if err != nil{
-		return nil,err
+	if err != nil {
+		return nil, err
 	}
 
 	return b, nil
@@ -29,8 +29,8 @@ func (ad AccountDebited) Encode(data interface{}) ([]byte, error) {
 func (ad AccountDebited) Decode(data []byte) (interface{}, error) {
 	debited := AccountDebited{}
 	err := json.Unmarshal(data, &debited)
-	if err != nil{
-		return nil,err
+	if err != nil {
+		return nil, err
 	}
 	return debited, nil
 }
