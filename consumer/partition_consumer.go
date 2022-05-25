@@ -214,8 +214,11 @@ MainLoop:
 				Headers:   msg.Headers,
 			}
 
-			//if highWatermark == 0 || highWatermark-1 == msg.Offset {
-			if msg.Offset == highWatermark-1 {
+			if msg.Offset == highWatermark-1 ||
+				// TODO this is a workaround to avoid the last message
+				// being a control record(https://kafka.apache.org/documentation/#controlbatch)
+				// when using transactional batches
+				msg.Offset == highWatermark-2 {
 				c.consumerEvents <- &PartitionEnd{
 					tps: []TopicPartition{{
 						Topic:     msg.Topic,
