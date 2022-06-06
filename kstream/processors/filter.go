@@ -85,5 +85,5 @@ func (f *Filter) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut inte
 		}
 	}
 
-	return kIn, vIn, ok, nil
+	return kIn, vIn, true, nil
 }
