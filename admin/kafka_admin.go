@@ -10,7 +10,6 @@ package admin
 
 import (
 	"fmt"
-
 	"github.com/Shopify/sarama"
 	"github.com/tryfix/errors"
 	"github.com/tryfix/log"
