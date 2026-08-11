@@ -37,7 +37,7 @@ func NewConfig() *config {
 
 func (c *config) parse() {
 	if c.ExpiredRecordCleanupInterval == time.Duration(0) {
-		c.ExpiredRecordCleanupInterval = time.Second
+		c.ExpiredRecordCleanupInterval = 24 * time.Hour
 	}
 
 	if c.Logger == nil {
