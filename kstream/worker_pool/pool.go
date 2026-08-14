@@ -170,7 +170,7 @@ func (w *worker) start() {
 	for task := range w.tasks {
 		_, _, err := w.topology.Run(task.ctx, task.key, task.val)
 		if err != nil {
-			w.logger.ErrorContext(task.ctx, `k-stream.task_pool`, err)
+			w.logger.ErrorContext(task.ctx, fmt.Sprintf(`k-stream.task_pool error due to %s`, err))
 		}
 		task.doneClb()
 	}
