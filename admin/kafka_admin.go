@@ -139,7 +139,8 @@ func (c *kafkaAdmin) CreateTopics(topics map[string]*Topic) error {
 		}
 		details.ConfigEntries = map[string]*string{}
 		for cName, config := range info.ConfigEntries {
-			details.ConfigEntries[cName] = &config
+			configCpy := config
+			details.ConfigEntries[cName] = &configCpy
 		}
 
 		err := c.admin.CreateTopic(name, details, false)
